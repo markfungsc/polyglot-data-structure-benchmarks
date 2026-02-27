@@ -1,0 +1,22 @@
+[package]
+name = "polyglot-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "bench_array"
+harness = false
+
+[[bench]]
+name = "bench_hashmap"
+harness = false
+
+[[bench]]
+name = "bench_concurrency"
+harness = false
