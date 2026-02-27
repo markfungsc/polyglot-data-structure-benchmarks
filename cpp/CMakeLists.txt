@@ -9,6 +9,7 @@ add_executable(bench_array benchmarks/bench_array.cpp)
 target_link_libraries(bench_array ds)
 
 add_executable(bench_hashmap benchmarks/bench_hashmap.cpp)
+target_include_directories(bench_hashmap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(bench_hashmap ds)
 
 add_executable(bench_concurrency benchmarks/bench_concurrency.cpp)

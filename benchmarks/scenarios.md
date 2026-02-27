@@ -25,3 +25,11 @@ Multiple producer threads and consumer threads sharing a queue or similar struct
 ## High allocation churn test
 
 Create and discard many short-lived structures or elements to stress allocator and GC. Measures time and peak memory.
+
+## HashMap: low-entropy / near-collision
+
+For the hashmap benchmark only: use a fixed small capacity (e.g. 64 buckets) so that many keys share few buckets (low entropy per bucket, near-collision workload). Same N scales as the main scenario. Output: `*_hashmap_low_entropy.csv`. Measures how insert/get degrade when many keys map into few buckets.
+
+## HashMap: load factor sensitivity
+
+For the hashmap benchmark only: fix N (e.g. 100_000) and vary initial capacity so that effective load factor is 0.25, 0.5, 0.75, 1.0. Output: `*_hashmap_loadfactor.csv`. Measures how performance changes with load factor.

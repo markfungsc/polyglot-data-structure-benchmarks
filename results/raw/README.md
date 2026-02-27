@@ -1,4 +1,3 @@
-# Raw benchmark results
+# Raw benchmark results (CSV only)
 
-Benchmark runners write output here (e.g. from `benchmarks/run_all.sh`).  
-Add `*.log` or specific files to `.gitignore` if you do not want to commit results; otherwise commit as needed for analysis.
+Benchmark programs write **CSV results** here (via `RESULTS_DIR` when running `benchmarks/run_all.sh`). Commit as needed for analysis.

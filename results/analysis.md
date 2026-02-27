@@ -1,9 +1,13 @@
 # Analysis
 
-Analysis will compare outputs under `results/raw/` across languages and summarize here.
+Analysis compares outputs under `results/raw/` across languages.
 
-Planned comparisons:
+**CSV outputs (hashmap benchmarks):**
 
-- Runtime (e.g. insert 1M, random access, delete workload)
-- Memory usage where measured
-- Concurrency behavior (producer-consumer, allocation churn)
+- `*_hashmap.csv`: N, insert_mean_ms, insert_std_ms, get_mean_ms, get_std_ms, memory_mb (main scenario, random keys).
+- `*_hashmap_low_entropy.csv`: Low-entropy / near-collision (fixed small capacity 64) — same columns except memory.
+- `*_hashmap_loadfactor.csv`: Load factor sensitivity (N=100k, capacity varied for 0.25, 0.5, 0.75, 1.0).
+
+**Plots:** Run `make plots` (or `python3 benchmarks/plot_results.py`) to generate log-scale graphs in `results/plots/`: insert_log.png, get_log.png, memory_log.png, low_entropy_insert_log.png, loadfactor_insert.png.
+
+See also [hashmap_tests_findings.md](hashmap_tests_findings.md) for interpretation and takeaways.

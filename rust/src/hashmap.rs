@@ -1,6 +1,10 @@
 // src/hashmap.rs
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::{BuildHasher, Hash, Hasher};
+use ahash::AHasher;
+use std::hash::BuildHasherDefault;
+
+type ABuildHasher = BuildHasherDefault<AHasher>;
 
 pub struct Entry<K, V> {
     key: K,
@@ -11,6 +15,7 @@ pub struct HashMap<K, V> {
     buckets: Vec<Vec<Entry<K, V>>>, // separate chaining
     capacity: usize,
     size: usize,
+    build_hasher: ABuildHasher,
 }
 
 impl<K: Eq + Hash + Clone, V: Clone> HashMap<K, V> {
@@ -20,11 +25,12 @@ impl<K: Eq + Hash + Clone, V: Clone> HashMap<K, V> {
             buckets,
             capacity,
             size: 0,
+            build_hasher: ABuildHasher::default(),
         }
     }
 
     fn hash(&self, key: &K) -> usize {
-        let mut hasher = DefaultHasher::new();
+        let mut hasher = self.build_hasher.build_hasher();
         key.hash(&mut hasher);
         (hasher.finish() as usize) % self.capacity
     }

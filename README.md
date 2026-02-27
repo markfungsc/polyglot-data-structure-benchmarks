@@ -41,15 +41,16 @@ Results stored in `results/` (see [results/raw/](results/raw/README.md)).
 ## Project structure
 
 - **benchmarks/** — [scenarios.md](benchmarks/scenarios.md) (scenario definitions), [run_all.sh](benchmarks/run_all.sh) (orchestration)
-- **docs/** — [design.md](docs/design.md), [methodology.md](docs/methodology.md), [findings.md](docs/findings.md)
-- **results/** — raw output in `results/raw/`, [analysis.md](results/analysis.md) for summaries
+- **docs/** — [design.md](docs/design.md), [methodology.md](docs/methodology.md)
+- **results/** — CSV output in [results/raw/](results/raw/README.md), [analysis.md](results/analysis.md) for summaries, [hashmap_tests_findings.md](results/hashmap_tests_findings.md) for HashMap findings
 - **python/**, **java/**, **cpp/**, **rust/** — per-language sources, benchmarks, and tests
 
 ## Quick start
 
 ```bash
 make test      # run tests for all languages
-make bench     # run all benchmarks (output in results/raw/)
+make bench     # run all benchmarks (CSV in results/raw/)
+make plots     # generate log-scale graphs from results/raw (requires matplotlib)
 make docker-bench   # run benchmarks in Docker (optional)
 ```
 

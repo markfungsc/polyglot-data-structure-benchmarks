@@ -1,9 +1,10 @@
 #pragma once
+#include <cstddef>
 
 namespace lru_cache {
 struct LRUCache {
-    explicit LRUCache(size_t /*capacity*/) {}
+    explicit LRUCache(size_t capacity);
     int get(int key);
     void put(int key, int value);
 };
-}
+}  // namespace lru_cache
