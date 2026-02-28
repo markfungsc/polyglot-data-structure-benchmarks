@@ -10,9 +10,9 @@ mode="${1:-all}"
 
 run_python() {
   echo "== Python benchmarks (stub) =="
-  python3 "${ROOT_DIR}/python/benchmarks/bench_array.py"
-  python3 "${ROOT_DIR}/python/benchmarks/bench_hashmap.py"
-  python3 "${ROOT_DIR}/python/benchmarks/bench_concurrency.py"
+  python3 -O "${ROOT_DIR}/python/benchmarks/bench_array.py"
+  python3 -O "${ROOT_DIR}/python/benchmarks/bench_hashmap.py"
+  python3 -O "${ROOT_DIR}/python/benchmarks/bench_concurrency.py"
 }
 
 run_java() {

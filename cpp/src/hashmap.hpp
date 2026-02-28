@@ -13,7 +13,6 @@ namespace hashmap {
         size_t size() const;
 
     private:
-        static constexpr size_t DEFAULT_CAPACITY = 16;
         static constexpr double LOAD_FACTOR = 0.75;
 
         std::vector<std::vector<std::pair<int, int>>> buckets_;

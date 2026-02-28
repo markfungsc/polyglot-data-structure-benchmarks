@@ -5,7 +5,7 @@ class Entry:
 
 
 class HashMap:
-    def __init__(self, capacity=16):
+    def __init__(self, capacity: int):
         self.capacity = capacity
         self.size = 0
         self.buckets = [[] for _ in range(capacity)]  # list of lists

@@ -14,7 +14,6 @@ class Entry<K, V> {
 }
 
 public class HashMapCustom<K, V> {
-    private static final int DEFAULT_CAPACITY = 16;
     private static final double LOAD_FACTOR = 0.75;
 
     private List<List<Entry<K, V>>> buckets;
