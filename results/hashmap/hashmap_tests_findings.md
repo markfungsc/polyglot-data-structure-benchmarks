@@ -1,12 +1,12 @@
 # HashMap benchmark findings (methodology & test cases)
 
-This document covers: **HashMap** benchmark result comparison across Python, Java, C++, and Rust; **methodology** (warm-up, 5 runs, mean ± std, memory measurement); and **test cases** (main scaled scenario, low-entropy / near-collision, load-factor sensitivity). See [scenarios.md](../benchmarks/scenarios.md) and [methodology.md](../docs/methodology.md) for full definitions.
+This document covers: **HashMap** benchmark result comparison across Python, Java, C++, and Rust; **methodology** (warm-up, 5 runs, mean ± std, memory measurement); and **test cases** (main scaled scenario, low-entropy / near-collision, load-factor sensitivity). See [scenarios.md](../../benchmarks/scenarios.md) and [methodology.md](../../docs/methodology.md) for full definitions.
 
 ---
 
 # Findings: HashMap benchmark comparison
 
-Summary of results from `results/raw/*_hashmap.csv` (main scenario: random keys, scaled N, warm-up, mean ± std over 5 runs). All four implementations use **separate chaining** (custom code, not std-library hash tables). Data below from current `results/raw/` CSVs; plots in `results/plots/`.
+Summary of results from `raw/*_hashmap.csv` (main scenario: random keys, scaled N, warm-up, mean ± std over 5 runs). All four implementations use **separate chaining** (custom code, not std-library hash tables). Data below from current `raw/` CSVs; plots in `plots/`.
 
 ---
 
@@ -23,7 +23,7 @@ Summary of results from `results/raw/*_hashmap.csv` (main scenario: random keys,
 
 ## Summary of test results
 
-- **Main scenario (scaled N, random keys):** Insert and get scale roughly with N across languages. C++ is fastest on insert (57.6 ms at 1M), Rust fastest on get (2.1 ms at 1M) and lowest memory (82 MB). Python is slowest (3610 ms insert, 4548 ms get at 1M). See the table above and `results/plots/`: insert_log.png, get_log.png, memory_log.png.
+- **Main scenario (scaled N, random keys):** Insert and get scale roughly with N across languages. C++ is fastest on insert (57.6 ms at 1M), Rust fastest on get (2.1 ms at 1M) and lowest memory (82 MB). Python is slowest (3610 ms insert, 4548 ms get at 1M). See the table above and `plots/`: insert_log.png, get_log.png, memory_log.png.
 
 - **Low-entropy / near-collision (capacity=64):** With a fixed small capacity, many keys collide; insert times increase vs main at N=1M: C++ 185 ms vs 58 ms, Rust 293 ms vs 240 ms, Java 392 ms vs 255 ms, Python 4743 ms vs 3610 ms. Get also degrades (e.g. C++ get 19.9 ms vs 16.6 ms). Data from `*_hashmap_low_entropy.csv`; plot: low_entropy_insert_log.png.
 
@@ -38,24 +38,24 @@ Summary of results from `results/raw/*_hashmap.csv` (main scenario: random keys,
 1. **Python/Java slower than AOT C++/Rust:** At 1M, Python insert 3610 ms vs C++ 57.6 ms (~63×); Java get 118 ms vs Rust 2.1 ms (~56×). Supported by main scenario CSVs.
 2. **Rust get very fast:** 2.1 ms at 1M; flat layout, no GC. get_log.png shows Rust get well below others.
 3. **C++ insert fast:** 57.6 ms at 1M; chaining with reserve. insert_log.png shows C++ insert lowest.
-4. **Low-entropy degrades performance:** At 1M, C++ insert 185 ms (low_entropy) vs 57.6 ms (main); long chains cause more scans. Data from cpp_hashmap_low_entropy.csv vs cpp_hashmap.csv.
-5. **Java high memory:** 1763 MB at 1M (heap, object headers, JVM). memory_log.png and java_hashmap.csv memory_mb.
+4. **Low-entropy degrades performance:** At 1M, C++ insert 185 ms (low_entropy) vs 57.6 ms (main); long chains cause more scans. Data from raw/cpp_hashmap_low_entropy.csv vs raw/cpp_hashmap.csv.
+5. **Java high memory:** 1763 MB at 1M (heap, object headers, JVM). memory_log.png and raw/java_hashmap.csv memory_mb.
 
 **Unexpected or notable:**
 
 1. **Rust get ~8× faster than C++ get at 1M** (2.1 ms vs 16.6 ms) despite both using chaining. Likely contributors: compiler optimization of the inner loop, cache behavior of Rust’s layout, or allocation pattern differences.
-2. **Load-factor sensitivity differs by language:** C++ insert best at mid load factor (0.87 ms at 0.5); Rust insert relatively stable (~2–7 ms across 0.25–1.0). cpp_hashmap_loadfactor.csv vs rust_hashmap_loadfactor.csv.
+2. **Load-factor sensitivity differs by language:** C++ insert best at mid load factor (0.87 ms at 0.5); Rust insert relatively stable (~2–7 ms across 0.25–1.0). raw/cpp_hashmap_loadfactor.csv vs raw/rust_hashmap_loadfactor.csv.
 
 ---
 
 ## Possible explanations (with data)
 
 - **C++ insert lead:** Per-bucket preallocation (see bonus finding below), simple append, bulk resize. Insert at 1M: C++ 57.6 ms vs Rust 240 ms, Java 255 ms (from main CSVs).
-- **Rust get lead:** Contiguous layout, no GC pauses, efficient codegen. Get at 1M: Rust 2.1 ms vs C++ 16.6 ms (from rust_hashmap.csv, cpp_hashmap.csv).
-- **Java:** JIT helps but allocator/GC and boxed types cost. Insert 255 ms, get 118 ms, memory 1763 MB at 1M (java_hashmap.csv).
-- **Python:** Interpreter and object overhead. Insert 3610 ms, get 4548 ms at 1M vs C++ 57.6 ms / 16.6 ms (python_hashmap.csv vs cpp_hashmap.csv).
-- **Low-entropy:** Few buckets → long chains → more linear scans. C++ insert at 1M: 57.6 ms (main) vs 185 ms (low_entropy); rust_hashmap_low_entropy.csv shows similar degradation.
-- **Load factor:** C++ insert 0.87 ms at load factor 0.5 vs 3.79 ms at 1.0 (cpp_hashmap_loadfactor.csv) illustrates realloc/collision tradeoff; more buckets at low LF reduce collisions but more resize work at high LF.
+- **Rust get lead:** Contiguous layout, no GC pauses, efficient codegen. Get at 1M: Rust 2.1 ms vs C++ 16.6 ms (from raw/rust_hashmap.csv, raw/cpp_hashmap.csv).
+- **Java:** JIT helps but allocator/GC and boxed types cost. Insert 255 ms, get 118 ms, memory 1763 MB at 1M (raw/java_hashmap.csv).
+- **Python:** Interpreter and object overhead. Insert 3610 ms, get 4548 ms at 1M vs C++ 57.6 ms / 16.6 ms (raw/python_hashmap.csv vs raw/cpp_hashmap.csv).
+- **Low-entropy:** Few buckets → long chains → more linear scans. C++ insert at 1M: 57.6 ms (main) vs 185 ms (low_entropy); raw/rust_hashmap_low_entropy.csv shows similar degradation.
+- **Load factor:** C++ insert 0.87 ms at load factor 0.5 vs 3.79 ms at 1.0 (raw/cpp_hashmap_loadfactor.csv) illustrates realloc/collision tradeoff; more buckets at low LF reduce collisions but more resize work at high LF.
 
 ---
 
@@ -127,7 +127,7 @@ So Python is suitable for **prototyping and correctness**, not for throughput-se
 
 Adding a **small per-bucket preallocation** in the C++ hashmap constructor significantly improved insert performance.
 
-- **What:** In [cpp/src/hashmap.cpp](../cpp/src/hashmap.cpp), after `buckets_.resize(capacity_)`, each bucket is initialized with `bucket.reserve(2)` (lines 6–9). So every chain reserves space for two entries at creation time.
+- **What:** In [cpp/src/hashmap.cpp](../../cpp/src/hashmap.cpp), after `buckets_.resize(capacity_)`, each bucket is initialized with `bucket.reserve(2)` (lines 6–9). So every chain reserves space for two entries at creation time.
 - **Why it helps:** As the first few entries are added to each chain, the vector does not reallocate; the hot insert path avoids repeated growth and copy. The cost is a small, one-time allocation per bucket at construction.
 - **Result:** C++ insert is significantly faster with this change. The current C++ insert lead (57.6 ms at 1M vs Rust 240 ms, Java 255 ms) is partly due to this optimization. Lesson: even a small, predictable reserve in a hot path can yield large gains when scaling to millions of operations.
 

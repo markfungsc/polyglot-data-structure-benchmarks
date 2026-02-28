@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
 Read hashmap CSV results from results/raw/ and plot log-scale graphs.
-Saves figures to results/plots/.
+Saves figures to results/plots/. Supports custom dirs via RESULTS_DIR or
+RESULTS_RAW_DIR (CSV input), RESULTS_PLOTS_DIR (PNG output), or --raw-dir/--plots-dir.
 """
+import argparse
 import csv
 import os
 import sys
 
-def find_results_dir():
+def _default_results_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(script_dir, "..", "results", "raw")
 
-def find_plots_dir():
+def _default_plots_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(script_dir, "..", "results", "plots")
 
@@ -67,6 +69,16 @@ def load_loadfactor_csv(path):
     return lang, rows
 
 def main():
+    parser = argparse.ArgumentParser(description="Plot hashmap benchmark CSVs to PNGs.")
+    parser.add_argument("--raw-dir", help="Directory containing *_hashmap*.csv (overrides env)")
+    parser.add_argument("--plots-dir", help="Directory to write PNGs (overrides env)")
+    args = parser.parse_args()
+
+    raw_dir = args.raw_dir or os.environ.get("RESULTS_RAW_DIR") or os.environ.get("RESULTS_DIR") or _default_results_dir()
+    plots_dir = args.plots_dir or os.environ.get("RESULTS_PLOTS_DIR") or _default_plots_dir()
+    raw_dir = os.path.abspath(raw_dir)
+    plots_dir = os.path.abspath(plots_dir)
+
     try:
         import matplotlib
         matplotlib.use("Agg")
@@ -75,8 +87,6 @@ def main():
         print("matplotlib not found. Install with: pip install matplotlib", file=sys.stderr)
         sys.exit(1)
 
-    raw_dir = find_results_dir()
-    plots_dir = find_plots_dir()
     os.makedirs(plots_dir, exist_ok=True)
 
     # Collect main CSVs

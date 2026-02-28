@@ -24,7 +24,7 @@ run_java() {
 
 run_cpp() {
   echo "== C++ benchmarks (stub) =="
-  (cd "${ROOT_DIR}/cpp" && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build build >/dev/null && \
+  (cd "${ROOT_DIR}/cpp" && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native -flto" >/dev/null && cmake --build build >/dev/null && \
     ./build/bench_array || echo "C++ bench_array missing or failed.")
   (cd "${ROOT_DIR}/cpp" && ./build/bench_hashmap || echo "C++ bench_hashmap missing or failed.")
   (cd "${ROOT_DIR}/cpp" && ./build/bench_concurrency || echo "C++ bench_concurrency missing or failed.")

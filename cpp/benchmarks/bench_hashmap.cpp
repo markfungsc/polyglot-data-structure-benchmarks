@@ -16,6 +16,11 @@
 #include <sys/resource.h>
 #endif
 
+template <typename T>
+inline void do_not_optimize(const T& value) {
+    asm volatile("" : : "g"(value) : "memory");
+}
+
 namespace fs = std::filesystem;
 
 static constexpr int SCALES[] = {1000, 10'000, 100'000, 1'000'000};
@@ -70,7 +75,7 @@ int main() {
         {  // warm-up
             hashmap::HashMap map(static_cast<size_t>(std::max(16, n)));
             for (int k : keys) map.insert(k, k);
-            for (int k : keys) (void)map.get(k);
+            for (int k : keys) do_not_optimize(map.get(k));
         }
 
         std::vector<double> insert_ms(NUM_RUNS), get_ms(NUM_RUNS);
@@ -81,7 +86,7 @@ int main() {
             for (int k : keys) map.insert(k, k);
             insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
             start = std::chrono::high_resolution_clock::now();
-            for (int k : keys) (void)map.get(k);
+            for (int k : keys) do_not_optimize(map.get(k));
             get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
         }
         double i_mean, i_std, g_mean, g_std;
@@ -104,7 +109,7 @@ int main() {
         std::vector<int> keys(n);
         std::iota(keys.begin(), keys.end(), 0);
         std::shuffle(keys.begin(), keys.end(), g);
-        { hashmap::HashMap map(LOW_ENTROPY_CAPACITY); for (int k : keys) map.insert(k, k); for (int k : keys) (void)map.get(k); }
+        { hashmap::HashMap map(LOW_ENTROPY_CAPACITY); for (int k : keys) map.insert(k, k); for (int k : keys) do_not_optimize(map.get(k)); }
         std::vector<double> insert_ms(NUM_RUNS), get_ms(NUM_RUNS);
         for (int run = 0; run < NUM_RUNS; run++) {
             std::shuffle(keys.begin(), keys.end(), g);
@@ -113,7 +118,7 @@ int main() {
             for (int k : keys) map.insert(k, k);
             insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
             start = std::chrono::high_resolution_clock::now();
-            for (int k : keys) (void)map.get(k);
+            for (int k : keys) do_not_optimize(map.get(k));
             get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
         }
         double i_mean, i_std, g_mean, g_std;
@@ -136,7 +141,7 @@ int main() {
     for (double lf : LOAD_FACTORS) {
         std::shuffle(keys.begin(), keys.end(), g);
         size_t cap = std::max(size_t(16), size_t(n / lf));
-        { hashmap::HashMap map(cap); for (int k : keys) map.insert(k, k); for (int k : keys) (void)map.get(k); }
+        { hashmap::HashMap map(cap); for (int k : keys) map.insert(k, k); for (int k : keys) do_not_optimize(map.get(k)); }
         std::vector<double> insert_ms(NUM_RUNS), get_ms(NUM_RUNS);
         for (int run = 0; run < NUM_RUNS; run++) {
             std::shuffle(keys.begin(), keys.end(), g);
@@ -145,7 +150,7 @@ int main() {
             for (int k : keys) map.insert(k, k);
             insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
             start = std::chrono::high_resolution_clock::now();
-            for (int k : keys) (void)map.get(k);
+            for (int k : keys) do_not_optimize(map.get(k));
             get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
         }
         double i_mean, i_std, g_mean, g_std;

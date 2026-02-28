@@ -42,7 +42,7 @@ Results stored in `results/` (see [results/raw/](results/raw/README.md)).
 
 - **benchmarks/** — [scenarios.md](benchmarks/scenarios.md) (scenario definitions), [run_all.sh](benchmarks/run_all.sh) (orchestration)
 - **docs/** — [design.md](docs/design.md), [methodology.md](docs/methodology.md)
-- **results/** — CSV output in [results/raw/](results/raw/README.md), [analysis.md](results/analysis.md) for summaries, [hashmap_tests_findings.md](results/hashmap_tests_findings.md) for HashMap findings
+- **results/** — CSV output in [results/raw/](results/raw/README.md), [analysis.md](results/analysis.md) for summaries; preserved HashMap study in [results/hashmap/](results/hashmap/README.md) (raw CSVs in `results/hashmap/raw/`, [hashmap_tests_findings.md](results/hashmap/hashmap_tests_findings.md)); use `make save-hashmap-study` or `make plot-hashmap-study` to update study data/plots
 - **python/**, **java/**, **cpp/**, **rust/** — per-language sources, benchmarks, and tests
 
 ## Quick start
@@ -51,6 +51,8 @@ Results stored in `results/` (see [results/raw/](results/raw/README.md)).
 make test      # run tests for all languages
 make bench     # run all benchmarks (CSV in results/raw/)
 make plots     # generate log-scale graphs from results/raw (requires matplotlib)
+make save-hashmap-study   # copy results/raw/*_hashmap*.csv to results/hashmap/raw/ and plot there
+make plot-hashmap-study   # regenerate plots from results/hashmap/raw/ into results/hashmap/plots/
 make docker-bench   # run benchmarks in Docker (optional)
 ```
 
