@@ -1,0 +1,51 @@
+# Global OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Java / Maven
+target/
+*.iml
+.classpath
+.project
+.settings/
+
+# CMake / C++
+cpp/build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.obj
+*.o
+*.exe
+*.out
+*.a
+*.so
+*.dll
+
+# Rust
+rust/target/
+**/*.rs.bk
+
+# Benchmark outputs
+results/raw/*.log
+
+# Docker / misc
+.env.local
+.cache/
