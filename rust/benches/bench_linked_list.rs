@@ -1,18 +1,17 @@
-// Dynamic array benchmark: push (insert) and get by index. Same schema as hashmap.
+// Linked list benchmark: push (insert) and get by index. Same schema as hashmap.
 use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
-use polyglot_benchmarks::dynamic_array::DynamicArray;
+use polyglot_benchmarks::linked_list::LinkedList;
 use rand::prelude::*;
 use std::fs::File;
 use std::io::Write;
 use std::time::Instant;
-use std::hint::black_box;
 
 fn main() {
     let mut rng = rand::thread_rng();
     let out_dir = std::env::var("RESULTS_DIR").unwrap_or_else(|_| "../results/raw".into());
     std::fs::create_dir_all(&out_dir).expect("create results dir");
 
-    let csv_path = format!("{}/rust_dynamic_array.csv", out_dir);
+    let csv_path = format!("{}/rust_linked_list.csv", out_dir);
     let mut file = File::create(&csv_path).expect("create csv");
     writeln!(file, "N,insert_mean_ms,insert_std_ms,get_mean_ms,get_std_ms,memory_mb").expect("write header");
 
@@ -23,32 +22,20 @@ fn main() {
         {
             let mut keys: Vec<i32> = (0..n as i32).collect();
             keys.shuffle(&mut rng);
-            let mut arr = DynamicArray::new(n);
-            for &k in &keys { arr.push(k); }
-            let mut sum: i64 = 0;
-            for i in 0..n {
-                if let Some(v) = arr.get(i) {
-                    sum += *v as i64;
-                }
-            }
-            black_box(sum);
+            let mut list = LinkedList::new();
+            for &k in &keys { list.push(k); }
+            for i in 0..n { let _ = list.get(i); }
         }
 
         for _ in 0..NUM_RUNS {
             let mut keys: Vec<i32> = (0..n as i32).collect();
             keys.shuffle(&mut rng);
+            let mut list = LinkedList::new();
             let start = Instant::now();
-            let mut arr = DynamicArray::new(n);
-            for &k in &keys { arr.push(k); }
+            for &k in &keys { list.push(k); }
             insert_samples.push(start.elapsed().as_secs_f64() * 1000.0);
             let start = Instant::now();
-            let mut sum: i64 = 0;
-            for i in 0..n {
-                if let Some(v) = arr.get(i) {
-                    sum += *v as i64;
-                }
-            }
-            black_box(sum);
+            for i in 0..n { let _ = list.get(i); }
             get_samples.push(start.elapsed().as_secs_f64() * 1000.0);
         }
 

@@ -1,5 +1,7 @@
 package com.polyglot.benchmarks;
 
+import static com.polyglot.benchmarks.BenchmarkUtil.*;
+
 import com.polyglot.HashMapCustom;
 import java.io.File;
 import java.io.PrintWriter;
@@ -8,16 +10,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class HashMapBenchmark {
-    private static final int[] SCALES = { 1_000, 10_000, 100_000, 1_000_000 };
-    private static final int NUM_RUNS = 5;
     private static final int LOW_ENTROPY_CAPACITY = 64;  // low-entropy / near-collision: few buckets
     private static final int LOAD_FACTOR_N = 100_000;
     private static final double[] LOAD_FACTORS = { 0.25, 0.5, 0.75, 1.0 };
 
     public static void main(String[] args) {
         try {
-            String outDir = System.getenv("RESULTS_DIR");
-            if (outDir == null) outDir = System.getProperty("results.dir", "../results/raw");
+            String outDir = getResultsDir();
             new File(outDir).mkdirs();
             runMain(outDir);
             runLowEntropy(outDir);
@@ -26,24 +25,6 @@ public class HashMapBenchmark {
             t.printStackTrace();
             System.exit(1);
         }
-    }
-
-    private static double mean(double[] a) {
-        double s = 0;
-        for (double x : a) s += x;
-        return s / a.length;
-    }
-
-    private static double std(double[] a, double mean) {
-        if (a.length < 2) return 0;
-        double s = 0;
-        for (double x : a) s += (x - mean) * (x - mean);
-        return Math.sqrt(s / (a.length - 1));
-    }
-
-    private static double memoryMb() {
-        Runtime rt = Runtime.getRuntime();
-        return (rt.totalMemory() - rt.freeMemory()) / 1_000_000.0;
     }
 
     private static void runMain(String outDir) throws Exception {

@@ -1,27 +1,17 @@
 import sys
 import os
 import random
-import csv
-import statistics
 import time
 
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _script_dir)
+sys.path.insert(0, os.path.join(_script_dir, ".."))
 from src.hashmap import HashMap
+from bench_common import SCALES, NUM_RUNS, get_memory_mb, mean_std, write_csv, get_results_dir
 
-SCALES = [1_000, 10_000, 100_000, 1_000_000]
-NUM_RUNS = 5
 LOW_ENTROPY_CAPACITY = 64  # low-entropy / near-collision: few buckets, many keys
 LOAD_FACTOR_N = 100_000
 LOAD_FACTORS = [0.25, 0.5, 0.75, 1.0]
-
-
-def get_memory_mb():
-    """Peak RSS in MB (Linux). Returns 0.0 if not available."""
-    try:
-        import resource
-        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0  # KB -> MB
-    except Exception:
-        return 0.0
 
 
 def run_one_insert(N, capacity):
@@ -64,23 +54,8 @@ def measure_get_times(N, capacity, warmup=True):
     return times_ms
 
 
-def mean_std(times_ms):
-    if len(times_ms) < 2:
-        return statistics.mean(times_ms), 0.0
-    return statistics.mean(times_ms), statistics.stdev(times_ms)
-
-
-def write_csv(rows, results_dir, filename):
-    path = os.path.join(results_dir, filename)
-    with open(path, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(rows)
-    print(f"Wrote {path}")
-
-
 def main():
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    results_dir = os.path.join(script_dir, "..", "..", "results", "raw")
+    results_dir = get_results_dir()
     os.makedirs(results_dir, exist_ok=True)
 
     # ---- Main scenario: scaled, random keys, with std dev and memory ----

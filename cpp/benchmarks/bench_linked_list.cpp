@@ -1,5 +1,5 @@
 #include "bench_common.hpp"
-#include "dynamic_array.hpp"
+#include "linked_list.hpp"
 #include <chrono>
 #include <random>
 
@@ -10,7 +10,7 @@ int main() {
     std::random_device rd;
     std::mt19937 g(rd());
 
-    std::string csv_path = out_dir + "/cpp_dynamic_array.csv";
+    std::string csv_path = out_dir + "/cpp_linked_list.csv";
     std::ofstream file(csv_path);
     if (!file.is_open()) {
         std::cerr << "Failed to open " << csv_path << "\n";
@@ -25,20 +25,20 @@ int main() {
         std::shuffle(keys.begin(), keys.end(), g);
 
         {  // warm-up
-            dynamic_array::DynamicArray<std::int32_t> arr;
-            for (int k : keys) arr.push(k);
-            for (size_t i = 0; i < static_cast<size_t>(n); i++) do_not_optimize(arr.get(i));
+            linked_list::LinkedList list;
+            for (int k : keys) list.push(k);
+            for (size_t i = 0; i < static_cast<size_t>(n); i++) do_not_optimize(list.get(i));
         }
 
         std::vector<double> insert_ms(NUM_RUNS), get_ms(NUM_RUNS);
         for (int run = 0; run < NUM_RUNS; run++) {
             std::shuffle(keys.begin(), keys.end(), g);
-            dynamic_array::DynamicArray<std::int32_t> arr;
+            linked_list::LinkedList list;
             auto start = std::chrono::high_resolution_clock::now();
-            for (int k : keys) arr.push(k);
+            for (int k : keys) list.push(k);
             insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
             start = std::chrono::high_resolution_clock::now();
-            for (size_t i = 0; i < static_cast<size_t>(n); i++) do_not_optimize(arr.get(i));
+            for (size_t i = 0; i < static_cast<size_t>(n); i++) do_not_optimize(list.get(i));
             get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
         }
         double i_mean, i_std, g_mean, g_std;

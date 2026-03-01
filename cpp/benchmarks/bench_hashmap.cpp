@@ -1,57 +1,14 @@
+#include "bench_common.hpp"
 #include "hashmap.hpp"
-#include <algorithm>
 #include <chrono>
-#include <cmath>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <numeric>
 #include <random>
-#include <string>
-#include <vector>
 
-#if defined(__linux__) || defined(__APPLE__)
-#include <sys/resource.h>
-#endif
-
-template <typename T>
-inline void do_not_optimize(const T& value) {
-    asm volatile("" : : "g"(value) : "memory");
-}
-
-namespace fs = std::filesystem;
-
-static constexpr int SCALES[] = {1000, 10'000, 100'000, 1'000'000};
-static constexpr int NUM_RUNS = 5;
 static constexpr size_t LOW_ENTROPY_CAPACITY = 64;  // low-entropy / near-collision: few buckets
 static constexpr int LOAD_FACTOR_N = 100'000;
 static constexpr double LOAD_FACTORS[] = {0.25, 0.5, 0.75, 1.0};
 
-static double memory_mb() {
-#if defined(__linux__) || defined(__APPLE__)
-    struct rusage u;
-    if (getrusage(RUSAGE_SELF, &u) == 0)
-        return u.ru_maxrss / 1024.0;  // KB -> MB (Linux); macOS is bytes, adjust if needed
-#endif
-    return 0.0;
-}
-
-static void mean_std(const std::vector<double>& v, double& mean, double& stddev) {
-    mean = 0;
-    for (double x : v) mean += x;
-    mean /= v.size();
-    stddev = 0;
-    if (v.size() >= 2) {
-        for (double x : v) stddev += (x - mean) * (x - mean);
-        stddev = std::sqrt(stddev / (v.size() - 1));
-    }
-}
-
 int main() {
-    const char* results_env = std::getenv("RESULTS_DIR");
-    std::string out_dir = results_env ? results_env : "../results/raw";
+    std::string out_dir = get_results_dir();
     fs::create_directories(out_dir);
 
     std::random_device rd;

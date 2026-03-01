@@ -1,39 +1,14 @@
 // Scaled benchmarks, random keys, std dev, memory, low-entropy (near-collision), load-factor; CSV output
+use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
 use polyglot_benchmarks::hashmap::HashMap;
 use rand::prelude::*;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
+use std::io::Write;
 use std::time::Instant;
 
-const SCALES: [usize; 4] = [1_000, 10_000, 100_000, 1_000_000];
-const NUM_RUNS: u32 = 5;
 const LOW_ENTROPY_CAPACITY: usize = 64; // low-entropy / near-collision: few buckets
 const LOAD_FACTOR_N: usize = 100_000;
 const LOAD_FACTORS: [f64; 4] = [0.25, 0.5, 0.75, 1.0];
-
-fn memory_mb() -> f64 {
-    let Ok(f) = std::fs::File::open("/proc/self/status") else { return 0.0 };
-    let r = BufReader::new(f);
-    for line in r.lines().flatten() {
-        if line.starts_with("VmRSS:") {
-            let num: String = line.split_whitespace().nth(1).unwrap_or("0").into();
-            let kb: f64 = num.parse().unwrap_or(0.0);
-            return kb / 1024.0;
-        }
-    }
-    0.0
-}
-
-fn mean_std(samples: &[f64]) -> (f64, f64) {
-    let n = samples.len() as f64;
-    let mean = samples.iter().sum::<f64>() / n;
-    let variance = if samples.len() >= 2 {
-        samples.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / (n - 1.0)
-    } else {
-        0.0
-    };
-    (mean, variance.sqrt())
-}
 
 fn main() {
     let mut rng = rand::thread_rng();

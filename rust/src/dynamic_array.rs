@@ -1,14 +1,27 @@
-pub struct DynamicArray;
+pub struct DynamicArray {
+    data: Vec<i32>,
+}
 
 impl DynamicArray {
-    pub fn new() -> Self {
-        DynamicArray
+    pub fn new(capacity: usize) -> Self {
+        DynamicArray {
+            data: Vec::with_capacity(capacity),
+        }
     }
-    pub fn push(&mut self, _x: i32) {}
-    pub fn get(&self, _i: usize) -> Option<i32> {
-        None
+
+    pub fn push(&mut self, value: i32) {
+        self.data.push(value);
     }
-    pub fn length(&self) -> usize {
-        0
+
+    pub fn get(&self, index: usize) -> Option<&i32> {
+        self.data.get(index)
+    }
+
+    pub fn size(&self) -> usize {
+        self.data.len()
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.data.capacity()
     }
 }
