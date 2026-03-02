@@ -22,5 +22,17 @@ name = "bench_hashmap"
 harness = false
 
 [[bench]]
+name = "bench_heap"
+harness = false
+
+[[bench]]
+name = "bench_linked_list"
+harness = false
+
+[[bench]]
+name = "bench_lru_cache"
+harness = false
+
+[[bench]]
 name = "bench_concurrency"
 harness = false

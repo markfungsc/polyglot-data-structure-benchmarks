@@ -7,32 +7,116 @@ export RESULTS_DIR
 mkdir -p "${RESULTS_DIR}"
 
 mode="${1:-all}"
+bench="${2:-}"
+
+BENCHMARKS="array hashmap heap linked_list lru_cache concurrency"
+
+valid_bench() {
+  local b
+  for b in $BENCHMARKS; do
+    if [[ "$b" == "$1" ]]; then return 0; fi
+  done
+  return 1
+}
+
+if [[ -n "$bench" ]] && ! valid_bench "$bench"; then
+  echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|concurrency]" >&2
+  exit 1
+fi
+
+run_python_one() {
+  local name="$1"
+  case "$name" in
+    array)         python3 -O "${ROOT_DIR}/python/benchmarks/bench_array.py" ;;
+    hashmap)       python3 -O "${ROOT_DIR}/python/benchmarks/bench_hashmap.py" ;;
+    heap)          python3 -O "${ROOT_DIR}/python/benchmarks/bench_heap.py" ;;
+    linked_list)   python3 -O "${ROOT_DIR}/python/benchmarks/bench_linked_list.py" ;;
+    lru_cache)     python3 -O "${ROOT_DIR}/python/benchmarks/bench_lru_cache.py" ;;
+    concurrency)   python3 -O "${ROOT_DIR}/python/benchmarks/bench_concurrency.py" ;;
+    *) echo "Unknown benchmark: $name" >&2; return 1 ;;
+  esac
+}
 
 run_python() {
-  echo "== Python benchmarks (stub) =="
-  python3 -O "${ROOT_DIR}/python/benchmarks/bench_array.py"
-  python3 -O "${ROOT_DIR}/python/benchmarks/bench_hashmap.py"
-  python3 -O "${ROOT_DIR}/python/benchmarks/bench_concurrency.py"
+  echo "== Python benchmarks =="
+  if [[ -z "$bench" ]]; then
+    for b in $BENCHMARKS; do run_python_one "$b" || true; done
+  else
+    run_python_one "$bench" || echo "Python $bench failed."
+  fi
+}
+
+run_java_one() {
+  local name="$1"
+  local class
+  case "$name" in
+    array)         class="com.polyglot.benchmarks.ArrayBenchmark" ;;
+    hashmap)       class="com.polyglot.benchmarks.HashMapBenchmark" ;;
+    heap)          class="com.polyglot.benchmarks.HeapBenchmark" ;;
+    linked_list)   class="com.polyglot.benchmarks.LinkedListBenchmark" ;;
+    lru_cache)     class="com.polyglot.benchmarks.LRUCacheBenchmark" ;;
+    concurrency)   class="com.polyglot.benchmarks.ConcurrencyBenchmark" ;;
+    *) echo "Unknown benchmark: $name" >&2; return 1 ;;
+  esac
+  (cd "${ROOT_DIR}/java" && mvn -q compile -DskipTests exec:java -Dexec.mainClass="$class") || echo "Java $name failed."
 }
 
 run_java() {
   echo "== Java benchmarks =="
-  (cd "${ROOT_DIR}/java" && mvn -q compile -DskipTests exec:java -Dexec.mainClass=com.polyglot.benchmarks.ArrayBenchmark) || echo "Java ArrayBenchmark failed. Run: cd java && mvn -e exec:java -Dexec.mainClass=com.polyglot.benchmarks.ArrayBenchmark"
-  (cd "${ROOT_DIR}/java" && mvn -q compile -DskipTests exec:java -Dexec.mainClass=com.polyglot.benchmarks.HashMapBenchmark) || echo "Java HashMapBenchmark failed."
-  (cd "${ROOT_DIR}/java" && mvn -q compile -DskipTests exec:java -Dexec.mainClass=com.polyglot.benchmarks.ConcurrencyBenchmark) || echo "Java ConcurrencyBenchmark failed."
+  if [[ -z "$bench" ]]; then
+    for b in $BENCHMARKS; do run_java_one "$b" || true; done
+  else
+    run_java_one "$bench"
+  fi
+}
+
+run_cpp_one() {
+  local name="$1"
+  local bin
+  case "$name" in
+    array)         bin="bench_array" ;;
+    hashmap)       bin="bench_hashmap" ;;
+    heap)          bin="bench_heap" ;;
+    linked_list)   bin="bench_linked_list" ;;
+    lru_cache)     bin="bench_lru_cache" ;;
+    concurrency)   bin="bench_concurrency" ;;
+    *) echo "Unknown benchmark: $name" >&2; return 1 ;;
+  esac
+  (cd "${ROOT_DIR}/cpp" && ./build/"$bin") || echo "C++ $name failed."
 }
 
 run_cpp() {
-  echo "== C++ benchmarks (stub) =="
-  (cd "${ROOT_DIR}/cpp" && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS_RELEASE="-O3 -march=native -flto" >/dev/null && cmake --build build >/dev/null && \
-    ./build/bench_array || echo "C++ bench_array missing or failed.")
-  (cd "${ROOT_DIR}/cpp" && ./build/bench_hashmap || echo "C++ bench_hashmap missing or failed.")
-  (cd "${ROOT_DIR}/cpp" && ./build/bench_concurrency || echo "C++ bench_concurrency missing or failed.")
+  echo "== C++ benchmarks =="
+  (cd "${ROOT_DIR}/cpp" && cmake -S . -B build -DCMAKE_BUILD_TYPE=Release >/dev/null && cmake --build build >/dev/null) || true
+  if [[ -z "$bench" ]]; then
+    for b in $BENCHMARKS; do run_cpp_one "$b" || true; done
+  else
+    run_cpp_one "$bench"
+  fi
+}
+
+run_rust_one() {
+  local name="$1"
+  local target
+  case "$name" in
+    array)         target="bench_array" ;;
+    hashmap)       target="bench_hashmap" ;;
+    heap)          target="bench_heap" ;;
+    linked_list)   target="bench_linked_list" ;;
+    lru_cache)     target="bench_lru_cache" ;;
+    concurrency)   target="bench_concurrency" ;;
+    *) echo "Unknown benchmark: $name" >&2; return 1 ;;
+  esac
+  (cd "${ROOT_DIR}/rust" && cargo bench -q --bench "$target") || echo "Rust $name failed."
 }
 
 run_rust() {
-  echo "== Rust benchmarks (stub) =="
-  (cd "${ROOT_DIR}/rust" && cargo bench -q || echo "Rust benches (stub) - may be empty.")
+  echo "== Rust benchmarks =="
+  if [[ -z "$bench" ]]; then
+    (cd "${ROOT_DIR}/rust" && cargo bench -q) || echo "Rust benches - some may have failed."
+  else
+    run_rust_one "$bench"
+  fi
 }
 
 case "${mode}" in
@@ -47,8 +131,7 @@ case "${mode}" in
     run_rust
     ;;
   *)
-    echo "Usage: $0 [python|java|cpp|rust|all]" >&2
+    echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|concurrency]" >&2
     exit 1
     ;;
 esac
-
