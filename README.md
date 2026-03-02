@@ -32,12 +32,15 @@ This repository implements core data structures and concurrency primitives in:
 
 ## Benchmarked Scenarios
 
-- Insert 1M elements
-- Random access
-- Delete workload
-- Mixed read/write workload
-- Concurrent producer-consumer
-- High allocation churn test
+Implemented benchmarks (dynamic array, hashmap) use:
+
+- **Scales:** N = 1,000; 10,000; 100,000; 1,000,000 (1k–1M).
+- **Insert phase:** Time to build the structure (push/put) for N elements.
+- **Get phase:** Time for N indexed or key-based accesses.
+- **Runs:** 5 timed runs per scale (mean ± std); one warm-up run per scale.
+- **HashMap only:** Main scenario above; plus low-entropy (same N scales, fixed small capacity) and load-factor sensitivity (e.g. N=100k, load factors 0.25–1.0).
+
+Planned or optional (see [scenarios.md](benchmarks/scenarios.md)): delete workload, mixed read/write, concurrent producer-consumer, high allocation churn.
 
 ## Tests and benchmarks summary
 
@@ -93,10 +96,13 @@ Results include runtime overhead differences (JIT warmup, interpreter overhead, 
 ```bash
 make test      # run tests for all languages
 make bench     # run all benchmarks (CSV in results/raw/)
-make plots     # generate log-scale graphs from results/raw (requires matplotlib)
-make save-hashmap-study   # copy results/raw/*_hashmap*.csv to results/hashmap/raw/ and plot there
+make plots     # hashmap log-scale plots from results/raw (requires matplotlib)
+make save-hashmap-study   # copy results/raw/*_hashmap*.csv to results/hashmap/raw/ and plot
 make plot-hashmap-study   # regenerate plots from results/hashmap/raw/ into results/hashmap/plots/
-make docker-bench   # run benchmarks in Docker (optional)
+make save-structure-study STRUCTURE=dynamic_array   # copy dynamic array CSVs to results/dynamic_array/raw/ and plot
+make plot-structure-study STRUCTURE=dynamic_array   # regenerate dynamic array plots from results/dynamic_array/raw/
+make bench-hashmap-study  # run all benchmarks into results/hashmap/raw/ then plot hashmap
+make docker-bench         # run benchmarks in Docker (optional)
 ```
 
 ## Why This Exists
