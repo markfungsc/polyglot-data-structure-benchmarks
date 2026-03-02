@@ -39,12 +39,38 @@ This repository implements core data structures and concurrency primitives in:
 - Concurrent producer-consumer
 - High allocation churn test
 
+## Tests and benchmarks summary
+
+This project implements the same data structures and benchmarks in Python, Java, C++, and Rust. Run `make test` for unit tests and `make bench` for benchmarks; see Quick start below.
+
+**Finished structure benchmarks**
+
+- **Dynamic array** — Insert/get and memory at 1k–1M elements across Python, Java, C++, and Rust. C++ and Rust fastest; Rust lowest memory. Results and plots: [results/dynamic_array/](results/dynamic_array/).
+- **HashMap** — Main scenario (scaled N) plus low-entropy and load-factor scenarios. C++ fastest insert; Rust fastest get and lowest memory. Results and plots: [results/hashmap/](results/hashmap/).
+
+**Benchmarks implemented**
+
+| Structure      | Python | Java | C++ | Rust |
+|----------------|--------|------|-----|------|
+| Dynamic Array  | ✓      | ✓    | ✓   | ✓    |
+| Linked List    | —      | —    | —   | —    |
+| HashMap        | ✓      | ✓    | ✓   | ✓    |
+| Heap           | —      | —    | —   | —    |
+| LRU Cache      | —      | —    | —   | —    |
+| Concurrency    | —      | —    | —   | —    |
+
 ## Methodology
 
 Each language implements equivalent logic.
 Benchmarks are run in isolation on same machine.
 Results stored in `results/` (see [results/raw/](results/raw/README.md)).
 Results include runtime overhead differences (JIT warmup, interpreter overhead, GC behavior) and therefore do not measure pure data structure complexity alone.
+
+### Test and benchmark results
+
+- **Benchmark results:** `make bench` writes CSV files to [results/raw/](results/raw/). Each run can overwrite; use `make save-hashmap-study` or `make save-structure-study STRUCTURE=...` to copy into preserved study folders.
+- **Preserved study results:** [results/hashmap/](results/hashmap/) (HashMap), [results/dynamic_array/](results/dynamic_array/) (dynamic array). Each has `raw/` (CSVs) and `plots/` (PNGs); findings in `*_findings.md`.
+- **Unit tests:** Run with `make test`; no results files are committed (pytest/mvn/cargo output to console).
 
 ## Limitations and Experimental Considerations
 
