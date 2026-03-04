@@ -7,6 +7,8 @@ This repository implements core data structures and concurrency primitives in:
 - C++
 - Rust
 
+These languages were chosen to compare/ study interpreted, JIT-compiled, and AOT-compiled runtimes and to contrast garbage-collected with manual memory management.
+
 ## Goals
 
 1. Compare runtime performance
