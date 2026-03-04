@@ -2,7 +2,7 @@
 
 Each scenario is implemented equivalently across Python, Java, C++, and Rust. What is measured (time, memory, or both) is noted per scenario.
 
-**Implemented benchmarks** (dynamic array, hashmap) use scales N = 1,000; 10,000; 100,000; 1,000,000 (1k–1M), with an **insert phase** (build structure for N elements) and a **get phase** (N indexed or key-based accesses). Each scale is timed 5 times (mean ± std) with one untimed warm-up run. See [methodology.md](../docs/methodology.md) for the common template and CSV schema.
+**Implemented benchmarks** (dynamic array, linked list, hashmap) use scales N = 1,000; 10,000; 100,000; 1,000,000 (1k–1M), with an **insert phase** (build structure for N elements) and a **get phase** (N indexed or key-based accesses; linked list uses one full traverse). Each scale is timed 5 times (mean ± std) with one untimed warm-up run. See [methodology.md](../docs/methodology.md) for the common template and CSV schema.
 
 ---
 
@@ -12,6 +12,17 @@ Each scenario is implemented equivalently across Python, Java, C++, and Rust. Wh
 - **Insert phase:** Time to build the structure (push/append or put) for N elements (keys shuffled for hashmap).
 - **Get phase:** Time for N indexed or key-based accesses (random access).
 - **Output:** `<lang>_<structure>.csv` with columns N, insert_mean_ms, insert_std_ms, get_mean_ms, get_std_ms, memory_mb.
+
+---
+
+## Linked list scenario (insert + traverse + delete) — *implemented* (linked list)
+
+- **Scales:** N = 1k, 10k, 100k, 1M (one row per scale).
+- **Insert phase:** Time to build the list (push_back) for N elements (keys shuffled).
+- **Get phase:** Time for **one full sequential traversal** (e.g. `traverse(f)`), not a loop of `get(i)` (which would be O(n²)). Ensures comparable O(n) “read all” cost across languages.
+- **Delete phase:** Time for one delete (e.g. delete last element). Delete at end is O(n) for a singly-linked list (must traverse to predecessor).
+- **Output:** `<lang>_linked_list.csv` with columns N, insert_mean_ms, insert_std_ms, get_mean_ms, get_std_ms, delete_mean_ms, delete_std_ms, memory_mb.
+- **Findings:** [results/linked_list/linked_list_findings.md](../results/linked_list/linked_list_findings.md) (Big O, pitfalls like get(i) in a loop, Java non-linear scaling).
 
 ---
 

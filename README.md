@@ -32,15 +32,16 @@ This repository implements core data structures and concurrency primitives in:
 
 ## Benchmarked Scenarios
 
-Implemented benchmarks (dynamic array, hashmap) use:
+Implemented benchmarks (dynamic array, linked list, hashmap) use:
 
 - **Scales:** N = 1,000; 10,000; 100,000; 1,000,000 (1k–1M).
 - **Insert phase:** Time to build the structure (push/put) for N elements.
-- **Get phase:** Time for N indexed or key-based accesses.
+- **Get phase:** Time for N indexed or key-based accesses (linked list: one full traverse, not get(i) in a loop).
 - **Runs:** 5 timed runs per scale (mean ± std); one warm-up run per scale.
+- **Linked list:** Insert, get (traverse), delete (one delete per run); see [scenarios.md](benchmarks/scenarios.md).
 - **HashMap only:** Main scenario above; plus low-entropy (same N scales, fixed small capacity) and load-factor sensitivity (e.g. N=100k, load factors 0.25–1.0).
 
-Planned or optional (see [scenarios.md](benchmarks/scenarios.md)): delete workload, mixed read/write, concurrent producer-consumer, high allocation churn.
+Planned or optional (see [scenarios.md](benchmarks/scenarios.md)): mixed read/write, concurrent producer-consumer, high allocation churn.
 
 ## Tests and benchmarks summary
 
@@ -49,6 +50,7 @@ This project implements the same data structures and benchmarks in Python, Java,
 **Finished structure benchmarks**
 
 - **Dynamic array** — Insert/get and memory at 1k–1M elements across Python, Java, C++, and Rust. C++ and Rust fastest; Rust lowest memory. Results and plots: [results/dynamic_array/](results/dynamic_array/).
+- **Linked list** — Insert, get (traverse), delete and memory at 1k–1M elements. C++ and Rust fastest; Java shows non-linear scaling and high variance. Results and findings: [results/linked_list/](results/linked_list/) ([linked_list_findings.md](results/linked_list/linked_list_findings.md)).
 - **HashMap** — Main scenario (scaled N) plus low-entropy and load-factor scenarios. C++ fastest insert; Rust fastest get and lowest memory. Results and plots: [results/hashmap/](results/hashmap/).
 
 **Benchmarks implemented**
@@ -56,7 +58,7 @@ This project implements the same data structures and benchmarks in Python, Java,
 | Structure      | Python | Java | C++ | Rust |
 |----------------|--------|------|-----|------|
 | Dynamic Array  | ✓      | ✓    | ✓   | ✓    |
-| Linked List    | —      | —    | —   | —    |
+| Linked List    | ✓      | ✓    | ✓   | ✓    |
 | HashMap        | ✓      | ✓    | ✓   | ✓    |
 | Heap           | —      | —    | —   | —    |
 | LRU Cache      | —      | —    | —   | —    |
@@ -72,7 +74,7 @@ Results include runtime overhead differences (JIT warmup, interpreter overhead, 
 ### Test and benchmark results
 
 - **Benchmark results:** `make bench` writes CSV files to [results/raw/](results/raw/). Each run can overwrite; use `make save-hashmap-study` or `make save-structure-study STRUCTURE=...` to copy into preserved study folders.
-- **Preserved study results:** [results/hashmap/](results/hashmap/) (HashMap), [results/dynamic_array/](results/dynamic_array/) (dynamic array). Each has `raw/` (CSVs) and `plots/` (PNGs); findings in `*_findings.md`.
+- **Preserved study results:** [results/hashmap/](results/hashmap/) (HashMap), [results/dynamic_array/](results/dynamic_array/) (dynamic array), [results/linked_list/](results/linked_list/) (linked list). Each has `raw/` (CSVs) and `plots/` (PNGs); findings in `*_findings.md`.
 - **Unit tests:** Run with `make test`; no results files are committed (pytest/mvn/cargo output to console).
 
 ## Limitations and Experimental Considerations
@@ -88,7 +90,7 @@ Results include runtime overhead differences (JIT warmup, interpreter overhead, 
 
 - **benchmarks/** — [scenarios.md](benchmarks/scenarios.md) (scenario definitions), [run_all.sh](benchmarks/run_all.sh) (orchestration)
 - **docs/** — [design.md](docs/design.md), [methodology.md](docs/methodology.md)
-- **results/** — CSV output in [results/raw/](results/raw/README.md), [analysis.md](results/analysis.md) for summaries; preserved HashMap study in [results/hashmap/](results/hashmap/README.md) (raw CSVs in `results/hashmap/raw/`, [hashmap_tests_findings.md](results/hashmap/hashmap_tests_findings.md)); structure-specific studies (e.g. dynamic array) in [results/dynamic_array/](results/dynamic_array/) with [dynamic_array_findings.md](results/dynamic_array/dynamic_array_findings.md); use `make save-hashmap-study`, `make save-structure-study STRUCTURE=dynamic_array`, or `make plot-structure-study STRUCTURE=...` to update study data/plots
+- **results/** — CSV output in [results/raw/](results/raw/README.md), [analysis.md](results/analysis.md) for summaries; preserved studies: [results/hashmap/](results/hashmap/README.md) (HashMap), [results/dynamic_array/](results/dynamic_array/) (dynamic array), [results/linked_list/](results/linked_list/) (linked list), each with `raw/`, `plots/`, and `*_findings.md`; use `make save-hashmap-study`, `make save-structure-study STRUCTURE=dynamic_array|linked_list`, or `make plot-structure-study STRUCTURE=...` to update study data/plots
 - **python/**, **java/**, **cpp/**, **rust/** — per-language sources, benchmarks, and tests
 
 ## Quick start
@@ -100,7 +102,9 @@ make plots     # hashmap log-scale plots from results/raw (requires matplotlib)
 make save-hashmap-study   # copy results/raw/*_hashmap*.csv to results/hashmap/raw/ and plot
 make plot-hashmap-study   # regenerate plots from results/hashmap/raw/ into results/hashmap/plots/
 make save-structure-study STRUCTURE=dynamic_array   # copy dynamic array CSVs to results/dynamic_array/raw/ and plot
-make plot-structure-study STRUCTURE=dynamic_array   # regenerate dynamic array plots from results/dynamic_array/raw/
+make save-structure-study STRUCTURE=linked_list      # copy linked list CSVs to results/linked_list/raw/ and plot
+make plot-structure-study STRUCTURE=dynamic_array   # regenerate dynamic array plots
+make plot-structure-study STRUCTURE=linked_list     # regenerate linked list plots
 make bench-hashmap-study  # run all benchmarks into results/hashmap/raw/ then plot hashmap
 make docker-bench         # run benchmarks in Docker (optional)
 ```
