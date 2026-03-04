@@ -1,8 +1,9 @@
-// Heap benchmark: push (insert) and peek (get). Same schema as hashmap.
+// Heap benchmark: insert, peek, and pop. Same schema as other structure benchmarks.
 use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
-use polyglot_benchmarks::heap::Heap;
+use polyglot_benchmarks::heap::MinHeap;
 use rand::prelude::*;
 use std::fs::File;
+use std::hint::black_box;
 use std::io::Write;
 use std::time::Instant;
 
@@ -17,33 +18,51 @@ fn main() {
 
     for &n in &SCALES {
         let mut insert_samples = Vec::with_capacity(NUM_RUNS as usize);
-        let mut get_samples = Vec::with_capacity(NUM_RUNS as usize);
+        let mut pop_samples = Vec::with_capacity(NUM_RUNS as usize);
 
+        // Warm-up: insert, peek, pop
         {
             let mut keys: Vec<i32> = (0..n as i32).collect();
             keys.shuffle(&mut rng);
-            let mut h = Heap::new();
-            for &k in &keys { h.push(k); }
-            for _ in 0..n { let _ = h.peek(); h.pop(); }
+            let mut h = MinHeap::new();
+            for &k in &keys {
+                h.insert(k);
+            }
+            while h.size() > 0 {
+                while let Some(value) = h.pop() {
+                    black_box(value);
+                }
+            }
         }
 
         for _ in 0..NUM_RUNS {
             let mut keys: Vec<i32> = (0..n as i32).collect();
             keys.shuffle(&mut rng);
-            let mut h = Heap::new();
+            let mut h = MinHeap::new();
+
             let start = Instant::now();
-            for &k in &keys { h.push(k); }
+            for &k in &keys {
+                h.insert(k); // O(log n) per insert
+            }
             insert_samples.push(start.elapsed().as_secs_f64() * 1000.0);
+
             let start = Instant::now();
-            for _ in 0..n { let _ = h.peek(); }
-            get_samples.push(start.elapsed().as_secs_f64() * 1000.0);
+            while h.size() > 0 {
+                if let Some(value) = h.pop() {
+                    black_box(value);
+                }
+            }
+            pop_samples.push(start.elapsed().as_secs_f64() * 1000.0);
         }
 
         let (i_mean, i_std) = mean_std(&insert_samples);
-        let (g_mean, g_std) = mean_std(&get_samples);
+        let (o_mean, o_std) = mean_std(&pop_samples);
         let mem = memory_mb();
-        writeln!(file, "{},{:.6},{:.6},{:.6},{:.6},{:.4}", n, i_mean, i_std, g_mean, g_std, mem).expect("write row");
-        println!("N={}: Insert {:.6} ± {:.6} ms, Get(peek) {:.6} ± {:.6} ms, memory={:.4} MB", n, i_mean, i_std, g_mean, g_std, mem);
+        writeln!(file, "{},{:.6},{:.6},{:.6},{:.6},{:.4}", n, i_mean, i_std, o_mean, o_std, mem).expect("write row");
+        println!(
+            "N={}: Insert {:.6} ± {:.6} ms, Pop {:.6} ± {:.6} ms, memory={:.4} MB",
+            n, i_mean, i_std, o_mean, o_std, mem
+        );
     }
     println!("Wrote {}", csv_path);
 }

@@ -2,7 +2,7 @@
 
 Each scenario is implemented equivalently across Python, Java, C++, and Rust. What is measured (time, memory, or both) is noted per scenario.
 
-**Implemented benchmarks** (dynamic array, linked list, hashmap) use scales N = 1,000; 10,000; 100,000; 1,000,000 (1k–1M), with an **insert phase** (build structure for N elements) and a **get phase** (N indexed or key-based accesses; linked list uses one full traverse). Each scale is timed 5 times (mean ± std) with one untimed warm-up run. See [methodology.md](../docs/methodology.md) for the common template and CSV schema.
+**Implemented benchmarks** (dynamic array, linked list, heap, hashmap) use scales N = 1,000; 10,000; 100,000; 1,000,000 (1k–1M), with an **insert phase** (build structure for N elements) and a **get phase** (N indexed or key-based accesses; linked list: one full traverse; heap: N pops of the minimum). Each scale is timed 5 times (mean ± std) with one untimed warm-up run. See [methodology.md](../docs/methodology.md) for the common template and CSV schema.
 
 ---
 
@@ -23,6 +23,17 @@ Each scenario is implemented equivalently across Python, Java, C++, and Rust. Wh
 - **Delete phase:** Time for one delete (e.g. delete last element). Delete at end is O(n) for a singly-linked list (must traverse to predecessor).
 - **Output:** `<lang>_linked_list.csv` with columns N, insert_mean_ms, insert_std_ms, get_mean_ms, get_std_ms, delete_mean_ms, delete_std_ms, memory_mb.
 - **Findings:** [results/linked_list/linked_list_findings.md](../results/linked_list/linked_list_findings.md) (Big O, pitfalls like get(i) in a loop, Java non-linear scaling).
+
+---
+
+## Heap scenario (insert + get = pop min) — *implemented* (heap)
+
+- **Scales:** N = 1k, 10k, 100k, 1M (one row per scale).
+- **Insert phase:** Time to build the heap (insert/push) for N elements (keys shuffled).
+- **Get phase:** Time for **N consecutive pops of the minimum** (drain the heap by repeated `pop()`). This is **not** random index access — heaps support O(1) peek at root and O(log n) pop min; the benchmark measures the cost of extracting the minimum element N times.
+- **Output:** `<lang>_heap.csv` with columns N, insert_mean_ms, insert_std_ms, get_mean_ms, get_std_ms, memory_mb.
+- **Notes:** Python uses `heapq` (C implementation) for best possible heap performance. C++ uses move semantics in pop/sift for performance.
+- **Findings:** [results/heap/heap_findings.md](../results/heap/heap_findings.md) (Big O, move vs swap, Python heapq).
 
 ---
 
