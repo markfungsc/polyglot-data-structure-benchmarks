@@ -2,7 +2,7 @@ package com.polyglot.benchmarks;
 
 import static com.polyglot.benchmarks.BenchmarkUtil.*;
 
-import com.polyglot.Heap;
+import com.polyglot.MinHeap;
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -31,29 +31,29 @@ public class HeapBenchmark {
                 for (int i = 0; i < n; i++) keys.add(i);
                 Collections.shuffle(keys);
 
-                Heap warm = new Heap();
-                for (int k : keys) warm.push(k);
-                for (int i = 0; i < n; i++) { warm.peek(); warm.pop(); }
+                MinHeap warm = new MinHeap(n);
+                for (int k : keys) warm.insert(k);
+                for (int i = 0; i < n; i++) { warm.pop(); }
 
                 double[] insertMs = new double[NUM_RUNS];
-                double[] getMs = new double[NUM_RUNS];
+                double[] popMs = new double[NUM_RUNS];
                 for (int run = 0; run < NUM_RUNS; run++) {
                     Collections.shuffle(keys);
-                    Heap h = new Heap();
+                    MinHeap h = new MinHeap(n);
                     long start = System.nanoTime();
-                    for (int k : keys) h.push(k);
+                    for (int k : keys) h.insert(k);
                     insertMs[run] = (System.nanoTime() - start) / 1_000_000.0;
                     start = System.nanoTime();
-                    for (int i = 0; i < n; i++) h.peek();
-                    getMs[run] = (System.nanoTime() - start) / 1_000_000.0;
+                    for (int i = 0; i < n; i++) h.pop();
+                    popMs[run] = (System.nanoTime() - start) / 1_000_000.0;
                 }
                 double mem = memoryMb();
                 double iMean = mean(insertMs);
                 double iStd = std(insertMs, iMean);
-                double gMean = mean(getMs);
-                double gStd = std(getMs, gMean);
-                pw.printf("%d,%.6f,%.6f,%.6f,%.6f,%.4f%n", n, iMean, iStd, gMean, gStd, mem);
-                System.out.printf("N=%d: Insert %.6f ± %.6f ms, Get(peek) %.6f ± %.6f ms, memory=%.4f MB%n", n, iMean, iStd, gMean, gStd, mem);
+                double pMean = mean(popMs);
+                double pStd = std(popMs, pMean);
+                pw.printf("%d,%.6f,%.6f,%.6f,%.6f,%.4f%n", n, iMean, iStd, pMean, pStd, mem);
+                System.out.printf("N=%d: Insert %.6f ± %.6f ms, Pop %.6f ± %.6f ms, memory=%.4f MB%n", n, iMean, iStd, pMean, pStd, mem);
             }
             System.out.println("Wrote " + csvPath);
         }
