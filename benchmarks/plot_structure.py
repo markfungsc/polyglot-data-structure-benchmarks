@@ -2,7 +2,7 @@
 """
 Plot benchmark CSVs for any structure (same schema as hashmap: N, insert_mean_ms, get_mean_ms, memory_mb).
 Usage: python3 plot_structure.py --structure heap [--raw-dir DIR] [--plots-dir DIR]
-Finds <lang>_<structure>.csv in raw_dir and writes insert_log.png, get_log.png, memory_log.png to plots_dir.
+Finds <lang>_<structure>.csv in raw_dir and writes insert_log.png, get_log.png, delete_log.png, memory_log.png to plots_dir.
 """
 import argparse
 import csv
@@ -36,6 +36,9 @@ def load_structure_csv(path, structure):
             if "get_mean_ms" not in row and "get_ms" in row:
                 row["get_mean_ms"] = row["get_ms"]
                 row["get_std_ms"] = row.get("get_std_ms", "0")
+            if "delete_mean_ms" not in row and "delete_ms" in row:
+                row["delete_mean_ms"] = row["delete_ms"]
+                row["delete_std_ms"] = row.get("delete_std_ms", "0")
             if "memory_mb" not in row:
                 row["memory_mb"] = "0"
             rows.append(row)
@@ -111,7 +114,22 @@ def main():
     plt.close(fig)
     print("Wrote", os.path.join(plots_dir, f"{prefix}_get_log.png"))
 
-    # Plot 3: N vs memory if any language has memory_mb > 0
+    # Plot 3: N vs delete time (log-log)
+    fig, ax = plt.subplots()
+    for lang, rows in main_data.items():
+        N = [int(r["N"]) for r in rows]
+        delete = [float(r.get("delete_mean_ms", r.get("delete_ms", 0))) for r in rows]
+        ax.loglog(N, delete, "o-", label=lang_display(lang), markersize=6)
+    ax.set_xlabel("N (number of elements)")
+    ax.set_ylabel("Delete time (ms)")
+    ax.set_title(f"{title_prefix} delete (log scale)")
+    ax.legend()
+    ax.grid(True, which="both", alpha=0.3)
+    fig.savefig(os.path.join(plots_dir, f"{prefix}_delete_log.png"), dpi=120, bbox_inches="tight")
+    plt.close(fig)
+    print("Wrote", os.path.join(plots_dir, f"{prefix}_delete_log.png"))
+
+    # Plot 4: N vs memory if any language has memory_mb > 0
     has_memory = any(
         float(r.get("memory_mb", 0) or 0) > 0
         for rows in main_data.values()

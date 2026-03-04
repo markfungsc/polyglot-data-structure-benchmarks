@@ -16,7 +16,7 @@ def main():
     results_dir = get_results_dir()
     os.makedirs(results_dir, exist_ok=True)
 
-    rows = [["N", "insert_mean_ms", "insert_std_ms", "get_mean_ms", "get_std_ms", "memory_mb"]]
+    rows = [["N", "insert_mean_ms", "insert_std_ms", "get_mean_ms", "get_std_ms", "delete_mean_ms", "delete_std_ms", "memory_mb"]]
     for N in SCALES:
         keys = list(range(N))
         random.shuffle(keys)
@@ -24,29 +24,41 @@ def main():
         # warm-up
         lst = LinkedList()
         for k in keys:
-            lst.push(k)
-        for i in range(N):
-            _ = lst.get(i)
+            lst.push_back(k)
+        sum_val = 0
+        def add_to_total(x):
+            nonlocal sum_val
+            sum_val += x
+        lst.traverse(add_to_total)
+        lst.delete(lst.size() - 1)
 
         insert_times = []
         get_times = []
+        delete_times = []
         for _ in range(NUM_RUNS):
             random.shuffle(keys)
             lst = LinkedList()
             start = time.perf_counter()
             for k in keys:
-                lst.push(k)
+                lst.push_back(k)
             insert_times.append((time.perf_counter() - start) * 1000)
             start = time.perf_counter()
-            for i in range(N):
-                _ = lst.get(i)
+            sum_val = 0
+            def add_to_total(x):
+                nonlocal sum_val
+                sum_val += x
+            lst.traverse(add_to_total)
             get_times.append((time.perf_counter() - start) * 1000)
+            start = time.perf_counter()
+            lst.delete(lst.size() - 1)
+            delete_times.append((time.perf_counter() - start) * 1000)
 
         i_mean, i_std = mean_std(insert_times)
         g_mean, g_std = mean_std(get_times)
+        d_mean, d_std = mean_std(delete_times)
         memory_mb = get_memory_mb()
-        rows.append([N, f"{i_mean:.6f}", f"{i_std:.6f}", f"{g_mean:.6f}", f"{g_std:.6f}", f"{memory_mb:.4f}"])
-        print(f"N={N}: Insert {i_mean:.6f} ± {i_std:.6f} ms, Get {g_mean:.6f} ± {g_std:.6f} ms, memory={memory_mb:.4f} MB")
+        rows.append([N, f"{i_mean:.6f}", f"{i_std:.6f}", f"{g_mean:.6f}", f"{g_std:.6f}", f"{d_mean:.6f}", f"{d_std:.6f}", f"{memory_mb:.4f}"])
+        print(f"N={N}: Insert {i_mean:.6f} ± {i_std:.6f} ms, Get {g_mean:.6f} ± {g_std:.6f} ms, Delete {d_mean:.6f} ± {d_std:.6f} ms, memory={memory_mb:.4f} MB")
     write_csv(rows, results_dir, "python_linked_list.csv")
 
 

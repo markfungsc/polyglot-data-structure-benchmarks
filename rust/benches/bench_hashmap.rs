@@ -3,6 +3,7 @@ use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
 use polyglot_benchmarks::hashmap::HashMap;
 use rand::prelude::*;
 use std::fs::File;
+use std::hint::black_box;
 use std::io::Write;
 use std::time::Instant;
 
@@ -102,6 +103,13 @@ fn main() {
             let mut map = HashMap::new(capacity);
             for &k in &keys { map.insert(k, k); }
             for &k in &keys { let _ = map.get(&k); }
+            let mut sum: i64 = 0;
+            for &k in &keys {
+                if let Some(v) = map.get(&k) {
+                    sum += *v as i64;
+                }
+            }
+            black_box(sum);
         }
         for _ in 0..NUM_RUNS {
             let mut keys: Vec<i32> = (0..n as i32).collect();
@@ -111,7 +119,13 @@ fn main() {
             for &k in &keys { map.insert(k, k); }
             insert_samples.push(start.elapsed().as_secs_f64() * 1000.0);
             let start = Instant::now();
-            for &k in &keys { let _ = map.get(&k); }
+            let mut sum: i64 = 0;
+            for &k in &keys {
+                if let Some(v) = map.get(&k) {
+                    sum += *v as i64;
+                }
+            }
+            black_box(sum);
             get_samples.push(start.elapsed().as_secs_f64() * 1000.0);
         }
         let (i_mean, i_std) = mean_std(&insert_samples);
