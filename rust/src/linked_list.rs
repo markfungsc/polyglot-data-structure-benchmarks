@@ -11,6 +11,12 @@ pub struct LinkedList {
     size: usize,
 }
 
+impl Default for LinkedList {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Drop for LinkedList {
     fn drop(&mut self) {
         let mut current = self.head.take();
@@ -24,13 +30,17 @@ impl Drop for LinkedList {
 
 impl LinkedList {
     pub fn new() -> Self {
-        LinkedList { head: None, tail: std::ptr::null_mut(), size: 0 }
+        LinkedList {
+            head: None,
+            tail: std::ptr::null_mut(),
+            size: 0,
+        }
     }
 
     // Push a new node to the back of the list
     pub fn push_back(&mut self, value: i32) {
         let mut new_node = Box::new(Node { value, next: None });
-        
+
         let raw_tail: *mut Node = &mut *new_node;
 
         if self.head.is_none() {
@@ -112,5 +122,51 @@ impl LinkedList {
             f(node.value);
             current = node.next.as_ref();
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_is_empty() {
+        let list = LinkedList::new();
+        assert_eq!(list.size(), 0);
+        assert_eq!(list.get(0), None);
+    }
+
+    #[test]
+    fn push_back_and_get() {
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        assert_eq!(list.size(), 3);
+        assert_eq!(list.get(0), Some(1));
+        assert_eq!(list.get(1), Some(2));
+        assert_eq!(list.get(2), Some(3));
+        assert_eq!(list.get(3), None);
+    }
+
+    #[test]
+    fn delete_head() {
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        assert!(list.delete(0));
+        assert_eq!(list.size(), 1);
+        assert_eq!(list.get(0), Some(2));
+    }
+
+    #[test]
+    fn traverse_collects() {
+        let mut list = LinkedList::new();
+        list.push_back(1);
+        list.push_back(2);
+        list.push_back(3);
+        let mut v = Vec::new();
+        list.traverse(|x| v.push(x));
+        assert_eq!(v, [1, 2, 3]);
     }
 }

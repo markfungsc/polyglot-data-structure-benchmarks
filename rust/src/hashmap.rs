@@ -1,8 +1,8 @@
 // src/hashmap.rs
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{BuildHasher, Hash, Hasher};
 use ahash::AHasher;
+use std::collections::hash_map::DefaultHasher;
 use std::hash::BuildHasherDefault;
+use std::hash::{BuildHasher, Hash, Hasher};
 
 type ABuildHasher = BuildHasherDefault<AHasher>;
 
@@ -30,9 +30,7 @@ impl<K: Eq + Hash + Clone, V: Clone> HashMap<K, V> {
     }
 
     fn hash(&self, key: &K) -> usize {
-        let mut hasher = self.build_hasher.build_hasher();
-        key.hash(&mut hasher);
-        (hasher.finish() as usize) % self.capacity
+        (self.build_hasher.hash_one(key) as usize) % self.capacity
     }
 
     pub fn insert(&mut self, key: K, value: V) {
@@ -62,7 +60,8 @@ impl<K: Eq + Hash + Clone, V: Clone> HashMap<K, V> {
 
     fn resize(&mut self) {
         self.capacity *= 2;
-        let mut new_buckets: Vec<Vec<Entry<K, V>>> = (0..self.capacity).map(|_| Vec::new()).collect();
+        let mut new_buckets: Vec<Vec<Entry<K, V>>> =
+            (0..self.capacity).map(|_| Vec::new()).collect();
         for bucket in &self.buckets {
             for entry in bucket {
                 let idx = {
@@ -77,5 +76,34 @@ impl<K: Eq + Hash + Clone, V: Clone> HashMap<K, V> {
             }
         }
         self.buckets = new_buckets;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_is_empty() {
+        let m: HashMap<i32, i32> = HashMap::new(8);
+        assert_eq!(m.get(&1), None);
+    }
+
+    #[test]
+    fn insert_and_get() {
+        let mut m = HashMap::new(8);
+        m.insert(1, 10);
+        m.insert(2, 20);
+        assert_eq!(m.get(&1), Some(&10));
+        assert_eq!(m.get(&2), Some(&20));
+        assert_eq!(m.get(&3), None);
+    }
+
+    #[test]
+    fn insert_overwrites() {
+        let mut m = HashMap::new(8);
+        m.insert(1, 10);
+        m.insert(1, 20);
+        assert_eq!(m.get(&1), Some(&20));
     }
 }

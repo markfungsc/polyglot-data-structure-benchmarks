@@ -27,3 +27,7 @@ target_link_libraries(bench_lru_cache ds)
 
 add_executable(bench_concurrency benchmarks/bench_concurrency.cpp)
 target_link_libraries(bench_concurrency ds)
+
+add_executable(test_ds tests/test_all.cpp)
+target_include_directories(test_ds PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+target_link_libraries(test_ds ds)

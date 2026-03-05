@@ -25,3 +25,26 @@ impl DynamicArray {
         self.data.capacity()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_has_zero_size() {
+        let a = DynamicArray::new(4);
+        assert_eq!(a.size(), 0);
+        assert_eq!(a.capacity(), 4);
+    }
+
+    #[test]
+    fn push_and_get() {
+        let mut a = DynamicArray::new(2);
+        a.push(10);
+        a.push(20);
+        assert_eq!(a.size(), 2);
+        assert_eq!(a.get(0), Some(&10));
+        assert_eq!(a.get(1), Some(&20));
+        assert_eq!(a.get(2), None);
+    }
+}

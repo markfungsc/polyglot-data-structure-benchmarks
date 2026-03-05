@@ -14,7 +14,11 @@ fn main() {
 
     let csv_path = format!("{}/rust_heap.csv", out_dir);
     let mut file = File::create(&csv_path).expect("create csv");
-    writeln!(file, "N,insert_mean_ms,insert_std_ms,get_mean_ms,get_std_ms,memory_mb").expect("write header");
+    writeln!(
+        file,
+        "N,insert_mean_ms,insert_std_ms,get_mean_ms,get_std_ms,memory_mb"
+    )
+    .expect("write header");
 
     for &n in &SCALES {
         let mut insert_samples = Vec::with_capacity(NUM_RUNS as usize);
@@ -58,7 +62,12 @@ fn main() {
         let (i_mean, i_std) = mean_std(&insert_samples);
         let (o_mean, o_std) = mean_std(&pop_samples);
         let mem = memory_mb();
-        writeln!(file, "{},{:.6},{:.6},{:.6},{:.6},{:.4}", n, i_mean, i_std, o_mean, o_std, mem).expect("write row");
+        writeln!(
+            file,
+            "{},{:.6},{:.6},{:.6},{:.6},{:.4}",
+            n, i_mean, i_std, o_mean, o_std, mem
+        )
+        .expect("write row");
         println!(
             "N={}: Insert {:.6} ± {:.6} ms, Pop {:.6} ± {:.6} ms, memory={:.4} MB",
             n, i_mean, i_std, o_mean, o_std, mem
