@@ -1,4 +1,5 @@
 """Shared constants and helpers for benchmark scripts (same schema and methodology)."""
+
 import os
 import csv
 import statistics
@@ -11,6 +12,7 @@ def get_memory_mb():
     """Peak RSS in MB (Linux). Returns 0.0 if not available."""
     try:
         import resource
+
         return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0  # KB -> MB
     except Exception:
         return 0.0

@@ -1,2 +1,7 @@
+# Test and benchmark dependencies
+numpy>=1.20.0
 pytest>=7.0.0
 matplotlib>=3.5.0
+# Format and lint
+black>=23.0.0
+ruff>=0.1.0

@@ -1,7 +1,8 @@
-#include "bench_common.hpp"
-#include "heap.hpp"
 #include <chrono>
 #include <random>
+
+#include "bench_common.hpp"
+#include "heap.hpp"
 
 int main() {
     std::string out_dir = get_results_dir();
@@ -36,18 +37,24 @@ int main() {
             heap::MinHeap<int> h(n);
             auto start = std::chrono::high_resolution_clock::now();
             for (int k : keys) h.insert(k);
-            insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            insert_ms[run] = std::chrono::duration<double, std::milli>(
+                                 std::chrono::high_resolution_clock::now() - start)
+                                 .count();
             start = std::chrono::high_resolution_clock::now();
             while (h.size() > 0) h.pop();
-            pop_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            pop_ms[run] = std::chrono::duration<double, std::milli>(
+                              std::chrono::high_resolution_clock::now() - start)
+                              .count();
         }
         double i_mean, i_std, p_mean, p_std;
         mean_std(insert_ms, i_mean, i_std);
         mean_std(pop_ms, p_mean, p_std);
         double mem = memory_mb();
-        file << n << "," << i_mean << "," << i_std << "," << p_mean << "," << p_std << "," << std::setprecision(4) << mem << "\n";
+        file << n << "," << i_mean << "," << i_std << "," << p_mean << "," << p_std << ","
+             << std::setprecision(4) << mem << "\n";
         file << std::setprecision(6);
-        std::cout << "N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Pop " << p_mean << " ± " << p_std << " ms, memory=" << mem << " MB\n";
+        std::cout << "N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Pop " << p_mean
+                  << " ± " << p_std << " ms, memory=" << mem << " MB\n";
     }
     std::cout << "Wrote " << csv_path << "\n";
     return 0;

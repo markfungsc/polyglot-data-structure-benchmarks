@@ -1,4 +1,5 @@
 #include "linked_list.hpp"
+
 #include <stdexcept>
 
 namespace linked_list {
@@ -59,9 +60,7 @@ void LinkedList::deleteNode(size_t index) {
     }
 }
 
-size_t LinkedList::size() const {
-    return size_;
-}
+size_t LinkedList::size() const { return size_; }
 
 void LinkedList::traverse(std::function<void(int)> const& f) {
     Node* current = head_;
@@ -71,4 +70,4 @@ void LinkedList::traverse(std::function<void(int)> const& f) {
     }
 }
 
-}
+}  // namespace linked_list

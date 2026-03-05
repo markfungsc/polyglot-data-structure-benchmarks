@@ -4,7 +4,7 @@
 
 namespace linked_list {
 class LinkedList {
-public:
+   public:
     LinkedList();
     ~LinkedList();
     void pushBack(int value);
@@ -16,7 +16,8 @@ public:
     // disable copy constructor and copy assignment
     LinkedList(const LinkedList&) = delete;
     LinkedList& operator=(const LinkedList&) = delete;
-private:
+
+   private:
     struct Node {
         int value;
         Node* next;
@@ -25,4 +26,4 @@ private:
     Node* tail_;
     size_t size_;
 };
-}
+}  // namespace linked_list

@@ -3,9 +3,9 @@ use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
 use polyglot_benchmarks::dynamic_array::DynamicArray;
 use rand::prelude::*;
 use std::fs::File;
+use std::hint::black_box;
 use std::io::Write;
 use std::time::Instant;
-use std::hint::black_box;
 
 fn main() {
     let mut rng = rand::thread_rng();
@@ -14,7 +14,11 @@ fn main() {
 
     let csv_path = format!("{}/rust_dynamic_array.csv", out_dir);
     let mut file = File::create(&csv_path).expect("create csv");
-    writeln!(file, "N,insert_mean_ms,insert_std_ms,get_mean_ms,get_std_ms,memory_mb").expect("write header");
+    writeln!(
+        file,
+        "N,insert_mean_ms,insert_std_ms,get_mean_ms,get_std_ms,memory_mb"
+    )
+    .expect("write header");
 
     for &n in &SCALES {
         let mut insert_samples = Vec::with_capacity(NUM_RUNS as usize);
@@ -24,7 +28,9 @@ fn main() {
             let mut keys: Vec<i32> = (0..n as i32).collect();
             keys.shuffle(&mut rng);
             let mut arr = DynamicArray::new(n);
-            for &k in &keys { arr.push(k); }
+            for &k in &keys {
+                arr.push(k);
+            }
             let mut sum: i64 = 0;
             for i in 0..n {
                 if let Some(v) = arr.get(i) {
@@ -39,7 +45,9 @@ fn main() {
             keys.shuffle(&mut rng);
             let start = Instant::now();
             let mut arr = DynamicArray::new(n);
-            for &k in &keys { arr.push(k); }
+            for &k in &keys {
+                arr.push(k);
+            }
             insert_samples.push(start.elapsed().as_secs_f64() * 1000.0);
             let start = Instant::now();
             let mut sum: i64 = 0;
@@ -55,8 +63,16 @@ fn main() {
         let (i_mean, i_std) = mean_std(&insert_samples);
         let (g_mean, g_std) = mean_std(&get_samples);
         let mem = memory_mb();
-        writeln!(file, "{},{:.6},{:.6},{:.6},{:.6},{:.4}", n, i_mean, i_std, g_mean, g_std, mem).expect("write row");
-        println!("N={}: Insert {:.6} ± {:.6} ms, Get {:.6} ± {:.6} ms, memory={:.4} MB", n, i_mean, i_std, g_mean, g_std, mem);
+        writeln!(
+            file,
+            "{},{:.6},{:.6},{:.6},{:.6},{:.4}",
+            n, i_mean, i_std, g_mean, g_std, mem
+        )
+        .expect("write row");
+        println!(
+            "N={}: Insert {:.6} ± {:.6} ms, Get {:.6} ± {:.6} ms, memory={:.4} MB",
+            n, i_mean, i_std, g_mean, g_std, mem
+        );
     }
     println!("Wrote {}", csv_path);
 }

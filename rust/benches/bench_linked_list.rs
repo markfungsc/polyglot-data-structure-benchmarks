@@ -26,7 +26,9 @@ fn main() {
             keys.shuffle(&mut rng);
             let mut list = LinkedList::new();
             // insert (in order)
-            for &k in &keys { list.push_back(k); }
+            for &k in &keys {
+                list.push_back(k);
+            }
 
             // Sequential traversal (instead of get(i))
             let mut sum = 0i64;
@@ -43,7 +45,9 @@ fn main() {
             let mut list = LinkedList::new();
             // insert (in order)
             let start = Instant::now();
-            for &k in &keys { list.push_back(k); }
+            for &k in &keys {
+                list.push_back(k);
+            }
             insert_samples.push(start.elapsed().as_secs_f64() * 1000.0);
 
             // Sequential traversal (instead of get(i))
@@ -63,7 +67,12 @@ fn main() {
         let (g_mean, g_std) = mean_std(&get_samples);
         let (d_mean, d_std) = mean_std(&delete_samples);
         let mem = memory_mb();
-        writeln!(file, "{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.4}", n, i_mean, i_std, g_mean, g_std, d_mean, d_std, mem).expect("write row");
+        writeln!(
+            file,
+            "{},{:.6},{:.6},{:.6},{:.6},{:.6},{:.6},{:.4}",
+            n, i_mean, i_std, g_mean, g_std, d_mean, d_std, mem
+        )
+        .expect("write row");
         println!("N={}: Insert {:.6} ± {:.6} ms, Get {:.6} ± {:.6} ms, Delete {:.6} ± {:.6} ms, memory={:.4} MB", n, i_mean, i_std, g_mean, g_std, d_mean, d_std, mem);
     }
     println!("Wrote {}", csv_path);

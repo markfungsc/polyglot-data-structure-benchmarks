@@ -2,6 +2,12 @@ pub struct MinHeap {
     data: Vec<i32>,
 }
 
+impl Default for MinHeap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MinHeap {
     pub fn new() -> Self {
         MinHeap { data: Vec::new() }
@@ -31,7 +37,7 @@ impl MinHeap {
     }
 
     pub fn peek(&self) -> Option<&i32> {
-        self.data.get(0)
+        self.data.first()
     }
 
     fn sift_up(&mut self, mut index: usize) {
@@ -59,21 +65,60 @@ impl MinHeap {
         loop {
             // get the left child index
             let left = 2 * index + 1;
-            if left >= n { // if the left child is out of bounds, break
+            if left >= n {
+                // if the left child is out of bounds, break
                 break;
             }
             let right = left + 1;
-            let smallest = if right < n && self.data[right] < self.data[left] { // if the right child is in bounds and is smaller than the left child, update the smallest index
+            let smallest = if right < n && self.data[right] < self.data[left] {
+                // if the right child is in bounds and is smaller than the left child, update the smallest index
                 right
-            } else { // else, update the smallest index to the left child
+            } else {
+                // else, update the smallest index to the left child
                 left
             };
-            if self.data[smallest] >= value { // if the smallest value is greater than the value, break
+            if self.data[smallest] >= value {
+                // if the smallest value is greater than the value, break
                 break;
             }
             self.data[index] = self.data[smallest]; // else, move the smallest value up
             index = smallest; // update the index to the smallest index
         }
         self.data[index] = value; // update the value at the correct index
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_is_empty() {
+        let mut h = MinHeap::new();
+        assert_eq!(h.size(), 0);
+        assert_eq!(h.peek(), None);
+        assert_eq!(h.pop(), None);
+    }
+
+    #[test]
+    fn insert_and_peek() {
+        let mut h = MinHeap::new();
+        h.insert(3);
+        h.insert(1);
+        h.insert(2);
+        assert_eq!(h.size(), 3);
+        assert_eq!(h.peek(), Some(&1));
+    }
+
+    #[test]
+    fn pop_returns_min() {
+        let mut h = MinHeap::new();
+        h.insert(3);
+        h.insert(1);
+        h.insert(2);
+        assert_eq!(h.pop(), Some(1));
+        assert_eq!(h.pop(), Some(2));
+        assert_eq!(h.pop(), Some(3));
+        assert_eq!(h.pop(), None);
     }
 }

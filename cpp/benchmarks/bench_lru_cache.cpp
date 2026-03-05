@@ -1,7 +1,8 @@
-#include "bench_common.hpp"
-#include "lru_cache.hpp"
 #include <chrono>
 #include <random>
+
+#include "bench_common.hpp"
+#include "lru_cache.hpp"
 
 int main() {
     std::string out_dir = get_results_dir();
@@ -37,18 +38,24 @@ int main() {
             lru_cache::LRUCache cache(capacity);
             auto start = std::chrono::high_resolution_clock::now();
             for (int k : keys) cache.put(k, k);
-            insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            insert_ms[run] = std::chrono::duration<double, std::milli>(
+                                 std::chrono::high_resolution_clock::now() - start)
+                                 .count();
             start = std::chrono::high_resolution_clock::now();
             for (int k : keys) do_not_optimize(cache.get(k));
-            get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            get_ms[run] = std::chrono::duration<double, std::milli>(
+                              std::chrono::high_resolution_clock::now() - start)
+                              .count();
         }
         double i_mean, i_std, g_mean, g_std;
         mean_std(insert_ms, i_mean, i_std);
         mean_std(get_ms, g_mean, g_std);
         double mem = memory_mb();
-        file << n << "," << i_mean << "," << i_std << "," << g_mean << "," << g_std << "," << std::setprecision(4) << mem << "\n";
+        file << n << "," << i_mean << "," << i_std << "," << g_mean << "," << g_std << ","
+             << std::setprecision(4) << mem << "\n";
         file << std::setprecision(6);
-        std::cout << "N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Get " << g_mean << " ± " << g_std << " ms, memory=" << mem << " MB\n";
+        std::cout << "N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Get " << g_mean
+                  << " ± " << g_std << " ms, memory=" << mem << " MB\n";
     }
     std::cout << "Wrote " << csv_path << "\n";
     return 0;
