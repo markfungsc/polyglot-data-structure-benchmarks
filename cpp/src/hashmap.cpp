@@ -17,8 +17,7 @@ size_t HashMap::hash(int key) const {
 int HashMap::get(int key) const {
     size_t idx = hash(key);
     for (const auto& p : buckets_[idx]) {
-        if (p.first == key)
-            return p.second;
+        if (p.first == key) return p.second;
     }
     return 0;
 }
@@ -33,8 +32,7 @@ void HashMap::insert(int key, int value) {
     }
     buckets_[idx].emplace_back(key, value);
     ++size_;
-    if (size_ > static_cast<size_t>(LOAD_FACTOR * capacity_))
-        resize();
+    if (size_ > static_cast<size_t>(LOAD_FACTOR * capacity_)) resize();
 }
 
 void HashMap::remove(int key) {
@@ -49,9 +47,7 @@ void HashMap::remove(int key) {
     }
 }
 
-size_t HashMap::size() const {
-    return size_;
-}
+size_t HashMap::size() const { return size_; }
 
 void HashMap::resize() {
     size_t new_cap = capacity_ * 2;

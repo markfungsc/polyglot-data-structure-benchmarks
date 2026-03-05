@@ -1,5 +1,6 @@
 #include "dynamic_array.hpp"
-#include <algorithm> // for std::move
+
+#include <algorithm>  // for std::move
 #include <cstdint>
 
 namespace dynamic_array {
@@ -40,11 +41,15 @@ inline T& DynamicArray<T>::get(size_t index) const {
 
 // Get the number of elements in the array
 template <typename T>
-size_t DynamicArray<T>::size() const { return size_; }
+size_t DynamicArray<T>::size() const {
+    return size_;
+}
 
 // Get the allocated capacity of the array
 template <typename T>
-size_t DynamicArray<T>::capacity() const { return capacity_; }
+size_t DynamicArray<T>::capacity() const {
+    return capacity_;
+}
 
 // Resize the array to the new capacity
 template <typename T>
@@ -67,7 +72,7 @@ inline void do_not_optimize(const T& value) {
     asm volatile("" : : "g"(value) : "memory");
 }
 
-}
+}  // namespace dynamic_array
 
 // Explicit template instantiation for int (since benchmark uses int)
 template class dynamic_array::DynamicArray<std::int32_t>;

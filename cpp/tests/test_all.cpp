@@ -1,9 +1,4 @@
 // Simple unit tests for all data structures (no external test framework).
-#include "../src/dynamic_array.hpp"
-#include "../src/linked_list.hpp"
-#include "../src/heap.hpp"
-#include "../src/hashmap.hpp"
-#include "../src/lru_cache.hpp"
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
@@ -11,26 +6,38 @@
 #include <stdexcept>
 #include <vector>
 
+#include "../src/dynamic_array.hpp"
+#include "../src/hashmap.hpp"
+#include "../src/heap.hpp"
+#include "../src/linked_list.hpp"
+#include "../src/lru_cache.hpp"
+
 static int tests_run = 0;
 static int tests_failed = 0;
 static const char* current_test = "";
 
-#define ASSERT(cond) do { \
-    ++tests_run; \
-    if (!(cond)) { \
-        fprintf(stderr, "%s:%d: [%s] ASSERT failed: %s\n", __FILE__, __LINE__, current_test, #cond); \
-        ++tests_failed; \
-        return; \
-    } \
-} while (0)
-#define ASSERT_THROW(expr, exc) do { \
-    ++tests_run; \
-    try { (expr); \
-        fprintf(stderr, "%s:%d: [%s] ASSERT_THROW failed: expected exception, none thrown\n", __FILE__, __LINE__, current_test); \
-        ++tests_failed; \
-        return; \
-    } catch (const exc&) {} \
-} while (0)
+#define ASSERT(cond)                                                                             \
+    do {                                                                                         \
+        ++tests_run;                                                                             \
+        if (!(cond)) {                                                                           \
+            fprintf(stderr, "%s:%d: [%s] ASSERT failed: %s\n", __FILE__, __LINE__, current_test, \
+                    #cond);                                                                      \
+            ++tests_failed;                                                                      \
+            return;                                                                              \
+        }                                                                                        \
+    } while (0)
+#define ASSERT_THROW(expr, exc)                                                                   \
+    do {                                                                                          \
+        ++tests_run;                                                                              \
+        try {                                                                                     \
+            (expr);                                                                               \
+            fprintf(stderr, "%s:%d: [%s] ASSERT_THROW failed: expected exception, none thrown\n", \
+                    __FILE__, __LINE__, current_test);                                            \
+            ++tests_failed;                                                                       \
+            return;                                                                               \
+        } catch (const exc&) {                                                                    \
+        }                                                                                         \
+    } while (0)
 
 void test_dynamic_array() {
     current_test = "test_dynamic_array";
@@ -111,7 +118,7 @@ void test_lru_cache() {
     current_test = "test_lru_cache";
     lru_cache::LRUCache cache(4);
     ASSERT(cache.get(1) == -1);  // stub returns -1
-    cache.put(1, 10);  // no throw
+    cache.put(1, 10);            // no throw
 }
 
 int main() {

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class DynamicArray:
     def __init__(self, capacity: int, dtype=np.int32):
         """
@@ -24,7 +25,7 @@ class DynamicArray:
     def resize(self):
         new_capacity = self.capacity * 2
         new_data = np.empty(new_capacity, dtype=self.data.dtype)
-        new_data[:self.size] = self.data[:self.size]  # copy old elements
+        new_data[: self.size] = self.data[: self.size]  # copy old elements
         self.data = new_data
         self.capacity = new_capacity
 

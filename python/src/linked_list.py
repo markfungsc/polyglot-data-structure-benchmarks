@@ -11,8 +11,8 @@ class LinkedList:
             self.next = None
 
     def __init__(self):
-        self.head = None # head node
-        self.tail = None # tail node (for fast append)
+        self.head = None  # head node
+        self.tail = None  # tail node (for fast append)
         self._size = 0
 
     def push_back(self, value: int):

@@ -1,7 +1,8 @@
-#include "bench_common.hpp"
-#include "hashmap.hpp"
 #include <chrono>
 #include <random>
+
+#include "bench_common.hpp"
+#include "hashmap.hpp"
 
 static constexpr size_t LOW_ENTROPY_CAPACITY = 64;  // low-entropy / near-collision: few buckets
 static constexpr int LOAD_FACTOR_N = 100'000;
@@ -41,18 +42,24 @@ int main() {
             hashmap::HashMap map(static_cast<size_t>(std::max(16, n)));
             auto start = std::chrono::high_resolution_clock::now();
             for (int k : keys) map.insert(k, k);
-            insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            insert_ms[run] = std::chrono::duration<double, std::milli>(
+                                 std::chrono::high_resolution_clock::now() - start)
+                                 .count();
             start = std::chrono::high_resolution_clock::now();
             for (int k : keys) do_not_optimize(map.get(k));
-            get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            get_ms[run] = std::chrono::duration<double, std::milli>(
+                              std::chrono::high_resolution_clock::now() - start)
+                              .count();
         }
         double i_mean, i_std, g_mean, g_std;
         mean_std(insert_ms, i_mean, i_std);
         mean_std(get_ms, g_mean, g_std);
         double mem = memory_mb();
-        file << n << "," << i_mean << "," << i_std << "," << g_mean << "," << g_std << "," << std::setprecision(4) << mem << "\n";
+        file << n << "," << i_mean << "," << i_std << "," << g_mean << "," << g_std << ","
+             << std::setprecision(4) << mem << "\n";
         file << std::setprecision(6);
-        std::cout << "N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Get " << g_mean << " ± " << g_std << " ms, memory=" << mem << " MB\n";
+        std::cout << "N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Get " << g_mean
+                  << " ± " << g_std << " ms, memory=" << mem << " MB\n";
     }
     std::cout << "Wrote " << csv_path << "\n";
     file.close();
@@ -66,23 +73,32 @@ int main() {
         std::vector<int> keys(n);
         std::iota(keys.begin(), keys.end(), 0);
         std::shuffle(keys.begin(), keys.end(), g);
-        { hashmap::HashMap map(LOW_ENTROPY_CAPACITY); for (int k : keys) map.insert(k, k); for (int k : keys) do_not_optimize(map.get(k)); }
+        {
+            hashmap::HashMap map(LOW_ENTROPY_CAPACITY);
+            for (int k : keys) map.insert(k, k);
+            for (int k : keys) do_not_optimize(map.get(k));
+        }
         std::vector<double> insert_ms(NUM_RUNS), get_ms(NUM_RUNS);
         for (int run = 0; run < NUM_RUNS; run++) {
             std::shuffle(keys.begin(), keys.end(), g);
             hashmap::HashMap map(LOW_ENTROPY_CAPACITY);
             auto start = std::chrono::high_resolution_clock::now();
             for (int k : keys) map.insert(k, k);
-            insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            insert_ms[run] = std::chrono::duration<double, std::milli>(
+                                 std::chrono::high_resolution_clock::now() - start)
+                                 .count();
             start = std::chrono::high_resolution_clock::now();
             for (int k : keys) do_not_optimize(map.get(k));
-            get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            get_ms[run] = std::chrono::duration<double, std::milli>(
+                              std::chrono::high_resolution_clock::now() - start)
+                              .count();
         }
         double i_mean, i_std, g_mean, g_std;
         mean_std(insert_ms, i_mean, i_std);
         mean_std(get_ms, g_mean, g_std);
         file << n << "," << i_mean << "," << i_std << "," << g_mean << "," << g_std << "\n";
-        std::cout << "Low-entropy N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Get " << g_mean << " ± " << g_std << " ms\n";
+        std::cout << "Low-entropy N=" << n << ": Insert " << i_mean << " ± " << i_std << " ms, Get "
+                  << g_mean << " ± " << g_std << " ms\n";
     }
     std::cout << "Wrote " << csv_path << "\n";
     file.close();
@@ -98,23 +114,32 @@ int main() {
     for (double lf : LOAD_FACTORS) {
         std::shuffle(keys.begin(), keys.end(), g);
         size_t cap = std::max(size_t(16), size_t(n / lf));
-        { hashmap::HashMap map(cap); for (int k : keys) map.insert(k, k); for (int k : keys) do_not_optimize(map.get(k)); }
+        {
+            hashmap::HashMap map(cap);
+            for (int k : keys) map.insert(k, k);
+            for (int k : keys) do_not_optimize(map.get(k));
+        }
         std::vector<double> insert_ms(NUM_RUNS), get_ms(NUM_RUNS);
         for (int run = 0; run < NUM_RUNS; run++) {
             std::shuffle(keys.begin(), keys.end(), g);
             hashmap::HashMap map(cap);
             auto start = std::chrono::high_resolution_clock::now();
             for (int k : keys) map.insert(k, k);
-            insert_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            insert_ms[run] = std::chrono::duration<double, std::milli>(
+                                 std::chrono::high_resolution_clock::now() - start)
+                                 .count();
             start = std::chrono::high_resolution_clock::now();
             for (int k : keys) do_not_optimize(map.get(k));
-            get_ms[run] = std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+            get_ms[run] = std::chrono::duration<double, std::milli>(
+                              std::chrono::high_resolution_clock::now() - start)
+                              .count();
         }
         double i_mean, i_std, g_mean, g_std;
         mean_std(insert_ms, i_mean, i_std);
         mean_std(get_ms, g_mean, g_std);
         file << lf << "," << i_mean << "," << i_std << "," << g_mean << "," << g_std << "\n";
-        std::cout << "LoadFactor=" << lf << ": Insert " << i_mean << " ± " << i_std << " ms, Get " << g_mean << " ± " << g_std << " ms\n";
+        std::cout << "LoadFactor=" << lf << ": Insert " << i_mean << " ± " << i_std << " ms, Get "
+                  << g_mean << " ± " << g_std << " ms\n";
     }
     std::cout << "Wrote " << csv_path << "\n";
     return 0;
