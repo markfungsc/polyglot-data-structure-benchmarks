@@ -1,16 +1,17 @@
 // LRU cache benchmark: put_miss, put_hit, get_hit, get_miss, eviction.
+use lru::LruCache;
 use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
-use polyglot_benchmarks::lru_cache::LRUCache;
 use std::fs::File;
 use std::hint::black_box;
 use std::io::Write;
+use std::num::NonZero;
 use std::time::Instant;
 
 fn main() {
     let out_dir = std::env::var("RESULTS_DIR").unwrap_or_else(|_| "../results/raw".into());
     std::fs::create_dir_all(&out_dir).expect("create results dir");
 
-    let csv_path = format!("{}/rust_lru_cache.csv", out_dir);
+    let csv_path = format!("{}/rust_native_lru_cache.csv", out_dir);
     let mut file = File::create(&csv_path).expect("create csv");
     writeln!(
         file,
@@ -29,18 +30,18 @@ fn main() {
         // Warm-up: build and use cache once at this scale
         {
             let keys: Vec<i32> = (0..n as i32).collect();
-            let mut cache = LRUCache::new(capacity);
+            let mut cache = LruCache::new(NonZero::new(capacity).unwrap());
             for &k in &keys {
                 cache.put(k, k);
             }
             for &k in &keys {
-                let _ = cache.get(k);
+                let _ = cache.get(&k);
             }
         }
 
         for _ in 0..NUM_RUNS {
             // put_miss: cache has capacity, N-1 elements; one put of a new key (no eviction)
-            let mut cache = LRUCache::new(capacity);
+            let mut cache = LruCache::new(NonZero::new(capacity).unwrap());
             let start = Instant::now();
             for i in 0..(capacity - 1) as i32 {
                 cache.put(i, i);
@@ -49,7 +50,7 @@ fn main() {
 
             // put_hit: full cache, N updates of existing keys
             let keys: Vec<i32> = (0..n as i32).collect();
-            let mut cache = LRUCache::new(capacity);
+            let mut cache = LruCache::new(NonZero::new(capacity).unwrap());
             for &k in &keys {
                 cache.put(k, k);
             }
@@ -61,32 +62,32 @@ fn main() {
 
             // get_hit: full cache, N lookups of existing keys
             let keys: Vec<i32> = (0..n as i32).collect();
-            let mut cache = LRUCache::new(capacity);
+            let mut cache = LruCache::new(NonZero::new(capacity).unwrap());
             for &k in &keys {
                 cache.put(k, k);
             }
             let start = Instant::now();
             for i in 0..n {
-                black_box(cache.get((i % capacity) as i32));
+                black_box(cache.get(&((i % capacity) as i32)));
             }
             get_hit_samples.push(start.elapsed().as_secs_f64() * 1000.0);
 
             // get_miss: full cache, N lookups of a key not in cache
             let keys: Vec<i32> = (0..n as i32).collect();
-            let mut cache = LRUCache::new(capacity);
+            let mut cache = LruCache::new(NonZero::new(capacity).unwrap());
             for &k in &keys {
                 cache.put(k, k);
             }
             let missing = n as i32; // not in 0..n
             let start = Instant::now();
             for _ in 0..n {
-                black_box(cache.get(missing));
+                black_box(cache.get(&missing));
             }
             get_miss_samples.push(start.elapsed().as_secs_f64() * 1000.0);
 
             // eviction: full cache, N puts of new keys so each put evicts LRU
             let keys: Vec<i32> = (0..n as i32).collect();
-            let mut cache = LRUCache::new(capacity);
+            let mut cache = LruCache::new(NonZero::new(capacity).unwrap());
             for &k in &keys {
                 cache.put(k, k);
             }

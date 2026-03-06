@@ -2,6 +2,7 @@
 
 #include <algorithm>  // for std::move
 #include <cstdint>
+#include <stdexcept>
 
 namespace dynamic_array {
 

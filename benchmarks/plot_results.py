@@ -18,7 +18,13 @@ def _default_plots_dir():
     return os.path.join(script_dir, "..", "results", "plots")
 
 def lang_display(lang):
-    return {"cpp": "C++", "python": "Python", "java": "Java", "rust": "Rust"}.get(lang, lang)
+    return {
+        "cpp": "C++",
+        "python": "Python",
+        "java": "Java",
+        "rust": "Rust",
+        "rust_native": "Rust (native)",
+    }.get(lang, lang)
 
 def load_main_csv(path):
     """Load main hashmap CSV; return (lang, rows) where rows are dicts with N, insert_mean_ms, get_mean_ms, etc."""
@@ -65,6 +71,22 @@ def load_loadfactor_csv(path):
                 row["insert_mean_ms"], row["insert_std_ms"] = row["insert_ms"], "0"
             if "get_mean_ms" not in row and "get_ms" in row:
                 row["get_mean_ms"], row["get_std_ms"] = row["get_ms"], "0"
+            rows.append(row)
+    return lang, rows
+
+
+def load_lru_cache_csv(path):
+    """Load LRU cache CSV (N, put_miss_mean_ms, put_hit_mean_ms, ...). Lang from filename, e.g. rust_native_lru_cache -> rust_native."""
+    name = os.path.basename(path).replace(".csv", "")
+    lang = name.replace("_lru_cache", "") if name.endswith("_lru_cache") else name
+    rows = []
+    with open(path, newline="") as f:
+        r = csv.DictReader(f)
+        for row in r:
+            row["_lang"] = lang
+            for col in ("put_miss_mean_ms", "put_hit_mean_ms", "get_hit_mean_ms", "get_miss_mean_ms", "eviction_mean_ms", "memory_mb"):
+                if col not in row:
+                    row[col] = "0"
             rows.append(row)
     return lang, rows
 
@@ -197,6 +219,58 @@ def main():
         fig.savefig(os.path.join(plots_dir, "loadfactor_insert.png"), dpi=120, bbox_inches="tight")
         plt.close(fig)
         print("Wrote", os.path.join(plots_dir, "loadfactor_insert.png"))
+
+    # LRU cache: discover *_lru_cache.csv and rust_native_lru_cache.csv
+    lru_data = {}
+    for name in os.listdir(raw_dir):
+        if "_lru_cache" in name and name.endswith(".csv"):
+            path = os.path.join(raw_dir, name)
+            if os.path.isfile(path):
+                lang, rows = load_lru_cache_csv(path)
+                lru_data[lang] = rows
+    if lru_data:
+        prefix = "lru-cache"
+        title_prefix = "LRU cache"
+        for col_key, file_suffix, ylabel in [
+            ("put_miss_mean_ms", "put_miss", "Put (miss) time (ms)"),
+            ("put_hit_mean_ms", "put_hit", "Put (hit) time (ms)"),
+            ("get_hit_mean_ms", "get_hit", "Get (hit) time (ms)"),
+            ("get_miss_mean_ms", "get_miss", "Get (miss) time (ms)"),
+            ("eviction_mean_ms", "eviction", "Eviction time (ms)"),
+        ]:
+            fig, ax = plt.subplots()
+            for lang, rows in lru_data.items():
+                N = [int(r["N"]) for r in rows]
+                vals = [float(r.get(col_key, 0) or 0) for r in rows]
+                ax.loglog(N, vals, "o-", label=lang_display(lang), markersize=6)
+            ax.set_xlabel("N (number of elements)")
+            ax.set_ylabel(ylabel)
+            ax.set_title(f"{title_prefix} {file_suffix.replace('_', ' ')} (log scale)")
+            ax.legend()
+            ax.grid(True, which="both", alpha=0.3)
+            fig.savefig(os.path.join(plots_dir, f"{prefix}_{file_suffix}_log.png"), dpi=120, bbox_inches="tight")
+            plt.close(fig)
+            print("Wrote", os.path.join(plots_dir, f"{prefix}_{file_suffix}_log.png"))
+        has_lru_memory = any(
+            float(r.get("memory_mb", 0) or 0) > 0
+            for rows in lru_data.values()
+            for r in rows
+        )
+        if has_lru_memory:
+            fig, ax = plt.subplots()
+            for lang, rows in lru_data.items():
+                N = [int(r["N"]) for r in rows]
+                mem = [float(r.get("memory_mb", 0) or 0) for r in rows]
+                if any(m > 0 for m in mem):
+                    ax.semilogx(N, mem, "o-", label=lang_display(lang), markersize=6)
+            ax.set_xlabel("N (number of elements)")
+            ax.set_ylabel("Memory (MB)")
+            ax.set_title(f"{title_prefix} memory (log N)")
+            ax.legend()
+            ax.grid(True, which="both", alpha=0.3)
+            fig.savefig(os.path.join(plots_dir, f"{prefix}_memory_log.png"), dpi=120, bbox_inches="tight")
+            plt.close(fig)
+            print("Wrote", os.path.join(plots_dir, f"{prefix}_memory_log.png"))
 
     print("Plots saved to", plots_dir)
 

@@ -1,7 +1,6 @@
 #pragma once
-#include <cstddef>    // for size_t
-#include <memory>     // for std::allocator
-#include <stdexcept>  // for std::out_of_range
+#include <cstddef>  // for size_t
+#include <memory>   // for std::allocator
 
 namespace dynamic_array {
 

@@ -9,7 +9,7 @@ mkdir -p "${RESULTS_DIR}"
 mode="${1:-all}"
 bench="${2:-}"
 
-BENCHMARKS="array hashmap heap linked_list lru_cache concurrency"
+BENCHMARKS="array hashmap heap linked_list lru_cache native_lru_cache concurrency"
 
 valid_bench() {
   local b
@@ -20,19 +20,20 @@ valid_bench() {
 }
 
 if [[ -n "$bench" ]] && ! valid_bench "$bench"; then
-  echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|concurrency]" >&2
+  echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|native_lru_cache|concurrency]" >&2
   exit 1
 fi
 
 run_python_one() {
   local name="$1"
   case "$name" in
-    array)         python3 -O "${ROOT_DIR}/python/benchmarks/bench_array.py" ;;
-    hashmap)       python3 -O "${ROOT_DIR}/python/benchmarks/bench_hashmap.py" ;;
-    heap)          python3 -O "${ROOT_DIR}/python/benchmarks/bench_heap.py" ;;
-    linked_list)   python3 -O "${ROOT_DIR}/python/benchmarks/bench_linked_list.py" ;;
-    lru_cache)     python3 -O "${ROOT_DIR}/python/benchmarks/bench_lru_cache.py" ;;
-    concurrency)   python3 -O "${ROOT_DIR}/python/benchmarks/bench_concurrency.py" ;;
+    array)             python3 -O "${ROOT_DIR}/python/benchmarks/bench_array.py" ;;
+    hashmap)           python3 -O "${ROOT_DIR}/python/benchmarks/bench_hashmap.py" ;;
+    heap)              python3 -O "${ROOT_DIR}/python/benchmarks/bench_heap.py" ;;
+    linked_list)       python3 -O "${ROOT_DIR}/python/benchmarks/bench_linked_list.py" ;;
+    lru_cache)         python3 -O "${ROOT_DIR}/python/benchmarks/bench_lru_cache.py" ;;
+    native_lru_cache)  ;;  # Rust only
+    concurrency)       python3 -O "${ROOT_DIR}/python/benchmarks/bench_concurrency.py" ;;
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
 }
@@ -50,12 +51,13 @@ run_java_one() {
   local name="$1"
   local class
   case "$name" in
-    array)         class="com.polyglot.benchmarks.ArrayBenchmark" ;;
-    hashmap)       class="com.polyglot.benchmarks.HashMapBenchmark" ;;
-    heap)          class="com.polyglot.benchmarks.HeapBenchmark" ;;
-    linked_list)   class="com.polyglot.benchmarks.LinkedListBenchmark" ;;
-    lru_cache)     class="com.polyglot.benchmarks.LRUCacheBenchmark" ;;
-    concurrency)   class="com.polyglot.benchmarks.ConcurrencyBenchmark" ;;
+    array)             class="com.polyglot.benchmarks.ArrayBenchmark" ;;
+    hashmap)           class="com.polyglot.benchmarks.HashMapBenchmark" ;;
+    heap)              class="com.polyglot.benchmarks.HeapBenchmark" ;;
+    linked_list)       class="com.polyglot.benchmarks.LinkedListBenchmark" ;;
+    lru_cache)         class="com.polyglot.benchmarks.LRUCacheBenchmark" ;;
+    native_lru_cache)  return 0 ;;  # Rust only
+    concurrency)       class="com.polyglot.benchmarks.ConcurrencyBenchmark" ;;
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
   (cd "${ROOT_DIR}/java" && mvn -q compile -DskipTests exec:java -Dexec.mainClass="$class") || echo "Java $name failed."
@@ -74,12 +76,13 @@ run_cpp_one() {
   local name="$1"
   local bin
   case "$name" in
-    array)         bin="bench_array" ;;
-    hashmap)       bin="bench_hashmap" ;;
-    heap)          bin="bench_heap" ;;
-    linked_list)   bin="bench_linked_list" ;;
-    lru_cache)     bin="bench_lru_cache" ;;
-    concurrency)   bin="bench_concurrency" ;;
+    array)             bin="bench_array" ;;
+    hashmap)           bin="bench_hashmap" ;;
+    heap)              bin="bench_heap" ;;
+    linked_list)       bin="bench_linked_list" ;;
+    lru_cache)         bin="bench_lru_cache" ;;
+    native_lru_cache)  return 0 ;;  # Rust only
+    concurrency)       bin="bench_concurrency" ;;
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
   (cd "${ROOT_DIR}/cpp" && ./build/"$bin") || echo "C++ $name failed."
@@ -99,12 +102,13 @@ run_rust_one() {
   local name="$1"
   local target
   case "$name" in
-    array)         target="bench_array" ;;
-    hashmap)       target="bench_hashmap" ;;
-    heap)          target="bench_heap" ;;
-    linked_list)   target="bench_linked_list" ;;
-    lru_cache)     target="bench_lru_cache" ;;
-    concurrency)   target="bench_concurrency" ;;
+    array)             target="bench_array" ;;
+    hashmap)           target="bench_hashmap" ;;
+    heap)              target="bench_heap" ;;
+    linked_list)       target="bench_linked_list" ;;
+    lru_cache)         target="bench_lru_cache" ;;
+    native_lru_cache)  target="bench_native_lru_cache" ;;
+    concurrency)       target="bench_concurrency" ;;
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
   (cd "${ROOT_DIR}/rust" && cargo bench -q --bench "$target") || echo "Rust $name failed."
@@ -131,7 +135,7 @@ case "${mode}" in
     run_rust
     ;;
   *)
-    echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|concurrency]" >&2
+    echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|native_lru_cache|concurrency]" >&2
     exit 1
     ;;
 esac
