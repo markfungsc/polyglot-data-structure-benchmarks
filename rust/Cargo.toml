@@ -8,6 +8,7 @@ path = "src/lib.rs"
 
 [dependencies]
 ahash = "0.8"
+lru = "0.16.3"
 
 [dev-dependencies]
 criterion = "0.5"
@@ -31,6 +32,10 @@ harness = false
 
 [[bench]]
 name = "bench_lru_cache"
+harness = false
+
+[[bench]]
+name = "bench_native_lru_cache"
 harness = false
 
 [[bench]]

@@ -18,7 +18,13 @@ def _default_plots_dir():
     return os.path.join(script_dir, "..", "results", "plots")
 
 def lang_display(lang):
-    return {"cpp": "C++", "python": "Python", "java": "Java", "rust": "Rust"}.get(lang, lang)
+    return {
+        "cpp": "C++",
+        "python": "Python",
+        "java": "Java",
+        "rust": "Rust",
+        "rust_native": "Rust (native)",
+    }.get(lang, lang)
 
 def load_structure_csv(path, structure):
     """Load structure CSV (same schema as hashmap main); return (lang, rows)."""
@@ -41,6 +47,10 @@ def load_structure_csv(path, structure):
                 row["delete_std_ms"] = row.get("delete_std_ms", "0")
             if "memory_mb" not in row:
                 row["memory_mb"] = "0"
+            # LRU cache columns (put_miss, put_hit, get_hit, get_miss, eviction)
+            for col in ("put_miss_mean_ms", "put_hit_mean_ms", "get_hit_mean_ms", "get_miss_mean_ms", "eviction_mean_ms"):
+                if col not in row:
+                    row[col] = "0"
             rows.append(row)
     return lang, rows
 
@@ -84,52 +94,74 @@ def main():
     prefix = structure.replace("_", "-")
     title_prefix = structure.replace("_", " ").title()
 
-    # Plot 1: N vs insert time (log-log)
-    fig, ax = plt.subplots()
-    for lang, rows in main_data.items():
-        N = [int(r["N"]) for r in rows]
-        insert = [float(r.get("insert_mean_ms", r.get("insert_ms", 0))) for r in rows]
-        ax.loglog(N, insert, "o-", label=lang_display(lang), markersize=6)
-    ax.set_xlabel("N (number of elements)")
-    ax.set_ylabel("Insert time (ms)")
-    ax.set_title(f"{title_prefix} insert (log scale)")
-    ax.legend()
-    ax.grid(True, which="both", alpha=0.3)
-    fig.savefig(os.path.join(plots_dir, f"{prefix}_insert_log.png"), dpi=120, bbox_inches="tight")
-    plt.close(fig)
-    print("Wrote", os.path.join(plots_dir, f"{prefix}_insert_log.png"))
+    if structure == "lru_cache":
+        # LRU cache: put_miss, put_hit, get_hit, get_miss, eviction + memory
+        lru_metrics = [
+            ("put_miss_mean_ms", "put_miss", "Put (miss) time (ms)"),
+            ("put_hit_mean_ms", "put_hit", "Put (hit) time (ms)"),
+            ("get_hit_mean_ms", "get_hit", "Get (hit) time (ms)"),
+            ("get_miss_mean_ms", "get_miss", "Get (miss) time (ms)"),
+            ("eviction_mean_ms", "eviction", "Eviction time (ms)"),
+        ]
+        for col_key, file_suffix, ylabel in lru_metrics:
+            fig, ax = plt.subplots()
+            for lang, rows in main_data.items():
+                N = [int(r["N"]) for r in rows]
+                vals = [float(r.get(col_key, 0) or 0) for r in rows]
+                ax.loglog(N, vals, "o-", label=lang_display(lang), markersize=6)
+            ax.set_xlabel("N (number of elements)")
+            ax.set_ylabel(ylabel)
+            ax.set_title(f"{title_prefix} {file_suffix.replace('_', ' ')} (log scale)")
+            ax.legend()
+            ax.grid(True, which="both", alpha=0.3)
+            fig.savefig(os.path.join(plots_dir, f"{prefix}_{file_suffix}_log.png"), dpi=120, bbox_inches="tight")
+            plt.close(fig)
+            print("Wrote", os.path.join(plots_dir, f"{prefix}_{file_suffix}_log.png"))
+    else:
+        # Default: insert, get, delete (log-log)
+        fig, ax = plt.subplots()
+        for lang, rows in main_data.items():
+            N = [int(r["N"]) for r in rows]
+            insert = [float(r.get("insert_mean_ms", r.get("insert_ms", 0))) for r in rows]
+            ax.loglog(N, insert, "o-", label=lang_display(lang), markersize=6)
+        ax.set_xlabel("N (number of elements)")
+        ax.set_ylabel("Insert time (ms)")
+        ax.set_title(f"{title_prefix} insert (log scale)")
+        ax.legend()
+        ax.grid(True, which="both", alpha=0.3)
+        fig.savefig(os.path.join(plots_dir, f"{prefix}_insert_log.png"), dpi=120, bbox_inches="tight")
+        plt.close(fig)
+        print("Wrote", os.path.join(plots_dir, f"{prefix}_insert_log.png"))
 
-    # Plot 2: N vs get time (log-log)
-    fig, ax = plt.subplots()
-    for lang, rows in main_data.items():
-        N = [int(r["N"]) for r in rows]
-        get_t = [float(r.get("get_mean_ms", r.get("get_ms", 0))) for r in rows]
-        ax.loglog(N, get_t, "o-", label=lang_display(lang), markersize=6)
-    ax.set_xlabel("N (number of elements)")
-    ax.set_ylabel("Get time (ms)")
-    ax.set_title(f"{title_prefix} get (log scale)")
-    ax.legend()
-    ax.grid(True, which="both", alpha=0.3)
-    fig.savefig(os.path.join(plots_dir, f"{prefix}_get_log.png"), dpi=120, bbox_inches="tight")
-    plt.close(fig)
-    print("Wrote", os.path.join(plots_dir, f"{prefix}_get_log.png"))
+        fig, ax = plt.subplots()
+        for lang, rows in main_data.items():
+            N = [int(r["N"]) for r in rows]
+            get_t = [float(r.get("get_mean_ms", r.get("get_ms", 0))) for r in rows]
+            ax.loglog(N, get_t, "o-", label=lang_display(lang), markersize=6)
+        ax.set_xlabel("N (number of elements)")
+        ax.set_ylabel("Get time (ms)")
+        ax.set_title(f"{title_prefix} get (log scale)")
+        ax.legend()
+        ax.grid(True, which="both", alpha=0.3)
+        fig.savefig(os.path.join(plots_dir, f"{prefix}_get_log.png"), dpi=120, bbox_inches="tight")
+        plt.close(fig)
+        print("Wrote", os.path.join(plots_dir, f"{prefix}_get_log.png"))
 
-    # Plot 3: N vs delete time (log-log)
-    fig, ax = plt.subplots()
-    for lang, rows in main_data.items():
-        N = [int(r["N"]) for r in rows]
-        delete = [float(r.get("delete_mean_ms", r.get("delete_ms", 0))) for r in rows]
-        ax.loglog(N, delete, "o-", label=lang_display(lang), markersize=6)
-    ax.set_xlabel("N (number of elements)")
-    ax.set_ylabel("Delete time (ms)")
-    ax.set_title(f"{title_prefix} delete (log scale)")
-    ax.legend()
-    ax.grid(True, which="both", alpha=0.3)
-    fig.savefig(os.path.join(plots_dir, f"{prefix}_delete_log.png"), dpi=120, bbox_inches="tight")
-    plt.close(fig)
-    print("Wrote", os.path.join(plots_dir, f"{prefix}_delete_log.png"))
+        fig, ax = plt.subplots()
+        for lang, rows in main_data.items():
+            N = [int(r["N"]) for r in rows]
+            delete = [float(r.get("delete_mean_ms", r.get("delete_ms", 0))) for r in rows]
+            ax.loglog(N, delete, "o-", label=lang_display(lang), markersize=6)
+        ax.set_xlabel("N (number of elements)")
+        ax.set_ylabel("Delete time (ms)")
+        ax.set_title(f"{title_prefix} delete (log scale)")
+        ax.legend()
+        ax.grid(True, which="both", alpha=0.3)
+        fig.savefig(os.path.join(plots_dir, f"{prefix}_delete_log.png"), dpi=120, bbox_inches="tight")
+        plt.close(fig)
+        print("Wrote", os.path.join(plots_dir, f"{prefix}_delete_log.png"))
 
-    # Plot 4: N vs memory if any language has memory_mb > 0
+    # Plot: N vs memory if any language has memory_mb > 0
     has_memory = any(
         float(r.get("memory_mb", 0) or 0) > 0
         for rows in main_data.values()
