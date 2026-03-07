@@ -41,3 +41,8 @@ harness = false
 [[bench]]
 name = "bench_concurrency"
 harness = false
+
+[[bench]]
+name = "workload_dynamic_array"
+harness = false
+path = "benches/workloads/workload_dynamic_array.rs"
