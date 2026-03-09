@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Plot workload benchmark CSVs: one graph per measurement (sum, vwap, ma, filter, memory).
-Finds *_workload_*.csv in raw_dir; writes *_sum_log.png, *_vwap_log.png, etc. to plots_dir.
+Plot workload benchmark CSVs: one graph per measurement.
+Supports dynamic_array (sum, vwap, ma, filter, memory) and hashmap (update, lookup, scan, range, memory).
+Finds *_workload_*.csv in raw_dir; writes *_<op>_log.png and *_memory_log.png to plots_dir.
 Usage: python3 plot_workload.py [--raw-dir DIR] [--plots-dir DIR]
 """
 import argparse
@@ -9,9 +10,28 @@ import csv
 import os
 import sys
 
-STRUCTS = ("vec", "vecdeque", "linkedlist", "columnar")
-STRUCT_LABELS = {"vec": "Vec", "vecdeque": "VecDeque", "linkedlist": "LinkedList", "columnar": "Columnar"}
-OPS = ("sum", "vwap", "ma", "filter")
+# Workload schemas: (structs tuple, struct_labels dict, ops tuple)
+WORKLOAD_CONFIGS = {
+    "dynamic_array": {
+        "structs": ("vec", "vecdeque", "linkedlist", "columnar"),
+        "labels": {"vec": "Vec", "vecdeque": "VecDeque", "linkedlist": "LinkedList", "columnar": "Columnar"},
+        "ops": ("sum", "vwap", "ma", "filter"),
+    },
+    "hashmap": {
+        "structs": ("hashmap", "btreemap", "vecmap"),
+        "labels": {"hashmap": "HashMap", "btreemap": "BTreeMap", "vecmap": "VecMap"},
+        "ops": ("update", "lookup", "scan", "range"),
+    },
+}
+
+
+def _detect_workload_config(fieldnames):
+    """Return (structs, labels, ops) for this CSV based on column names."""
+    if "hashmap_update_mean_ms" in fieldnames:
+        c = WORKLOAD_CONFIGS["hashmap"]
+        return c["structs"], c["labels"], c["ops"]
+    c = WORKLOAD_CONFIGS["dynamic_array"]
+    return c["structs"], c["labels"], c["ops"]
 
 
 def _default_raw_dir():
@@ -122,14 +142,14 @@ def main():
             continue
 
         fieldnames = list(rows[0].keys())
+        structs, struct_labels, ops = _detect_workload_config(fieldnames)
 
-        for op in OPS:
-            # Columns are {struct}_sum_mean_ms, etc.
-            required = [f"{s}_{op}_mean_ms" for s in STRUCTS]
+        for op in ops:
+            # Columns are {struct}_{op}_mean_ms
+            required = [f"{s}_{op}_mean_ms" for s in structs]
             if not any(c in fieldnames for c in required):
                 continue
-            # Build column list for this op (some structs might be missing)
-            cols_for_op = [(f"{s}_{op}_mean_ms", STRUCT_LABELS[s]) for s in STRUCTS if f"{s}_{op}_mean_ms" in fieldnames]
+            cols_for_op = [(f"{s}_{op}_mean_ms", struct_labels[s]) for s in structs if f"{s}_{op}_mean_ms" in fieldnames]
             if not cols_for_op:
                 continue
             ylabel = f"{op.replace('_', ' ').title()} time (ms)"
@@ -137,10 +157,10 @@ def main():
             out_path = os.path.join(plots_dir, f"{prefix}_{op}_log.png")
             plot_one_metric(rows, cols_for_op, ylabel, title, out_path, log_y=True)
 
-        # Memory: vec_memory_mb, etc.
-        mem_required = [f"{s}_memory_mb" for s in STRUCTS]
+        # Memory: {struct}_memory_mb
+        mem_required = [f"{s}_memory_mb" for s in structs]
         if any(c in fieldnames for c in mem_required):
-            mem_list = [(s, STRUCT_LABELS[s]) for s in STRUCTS if f"{s}_memory_mb" in fieldnames]
+            mem_list = [(s, struct_labels[s]) for s in structs if f"{s}_memory_mb" in fieldnames]
             if mem_list:
                 out_path = os.path.join(plots_dir, f"{prefix}_memory_log.png")
                 plot_memory(rows, mem_list, out_path)

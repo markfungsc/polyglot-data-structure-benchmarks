@@ -9,6 +9,7 @@ path = "src/lib.rs"
 [dependencies]
 ahash = "0.8"
 lru = "0.16.3"
+rustc-hash = "1"
 
 [dev-dependencies]
 criterion = "0.5"
@@ -46,3 +47,8 @@ harness = false
 name = "workload_dynamic_array"
 harness = false
 path = "benches/workloads/workload_dynamic_array.rs"
+
+[[bench]]
+name = "workload_hashmap"
+harness = false
+path = "benches/workloads/workload_hashmap.rs"

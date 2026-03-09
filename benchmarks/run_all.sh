@@ -9,7 +9,7 @@ mkdir -p "${RESULTS_DIR}"
 mode="${1:-all}"
 bench="${2:-}"
 
-BENCHMARKS="array hashmap heap linked_list lru_cache native_lru_cache concurrency workload_dynamic_array"
+BENCHMARKS="array hashmap heap linked_list lru_cache native_lru_cache concurrency workload_dynamic_array workload_hashmap"
 
 valid_bench() {
   local b
@@ -20,7 +20,7 @@ valid_bench() {
 }
 
 if [[ -n "$bench" ]] && ! valid_bench "$bench"; then
-  echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|native_lru_cache|concurrency|workload_dynamic_array]" >&2
+  echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|native_lru_cache|concurrency|workload_dynamic_array|workload_hashmap]" >&2
   exit 1
 fi
 
@@ -35,6 +35,7 @@ run_python_one() {
     native_lru_cache)  ;;  # Rust only
     concurrency)       python3 -O "${ROOT_DIR}/python/benchmarks/bench_concurrency.py" ;;
     workload_dynamic_array)  ;;  # Rust only
+    workload_hashmap)  ;;  # Rust only
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
 }
@@ -60,6 +61,7 @@ run_java_one() {
     native_lru_cache)  return 0 ;;  # Rust only
     concurrency)       class="com.polyglot.benchmarks.ConcurrencyBenchmark" ;;
     workload_dynamic_array)  return 0 ;;  # Rust only
+    workload_hashmap)  return 0 ;;  # Rust only
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
   (cd "${ROOT_DIR}/java" && mvn -q compile -DskipTests exec:java -Dexec.mainClass="$class") || echo "Java $name failed."
@@ -86,6 +88,7 @@ run_cpp_one() {
     native_lru_cache)  return 0 ;;  # Rust only
     concurrency)       bin="bench_concurrency" ;;
     workload_dynamic_array)  return 0 ;;  # Rust only
+    workload_hashmap)  return 0 ;;  # Rust only
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
   (cd "${ROOT_DIR}/cpp" && ./build/"$bin") || echo "C++ $name failed."
@@ -113,6 +116,7 @@ run_rust_one() {
     native_lru_cache)  target="bench_native_lru_cache" ;;
     concurrency)       target="bench_concurrency" ;;
     workload_dynamic_array)  target="workload_dynamic_array" ;;
+    workload_hashmap)  target="workload_hashmap" ;;
     *) echo "Unknown benchmark: $name" >&2; return 1 ;;
   esac
   (cd "${ROOT_DIR}/rust" && cargo bench -q --bench "$target") || echo "Rust $name failed."
@@ -139,7 +143,7 @@ case "${mode}" in
     run_rust
     ;;
   *)
-    echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|native_lru_cache|concurrency|workload_dynamic_array]" >&2
+    echo "Usage: $0 [python|java|cpp|rust|all] [array|hashmap|heap|linked_list|lru_cache|native_lru_cache|concurrency|workload_dynamic_array|workload_hashmap]" >&2
     exit 1
     ;;
 esac
