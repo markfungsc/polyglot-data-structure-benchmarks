@@ -1,4 +1,4 @@
-# Workload: Dynamic array — structure comparison (findings)
+# Workload: Dynamic array — comparison of linear data structures (findings)
 
 This document summarizes the **workload_dynamic_array** benchmark: comparison of **contiguous** (Vec, VecDeque, columnar) vs **non-contiguous** (LinkedList) storage in Rust across four operations (sum, VWAP, moving average, filter) and memory. The benchmark uses **tick data** (price and volume per tick) to mimic real-world trading data processing — sequential ingestion, windowed analytics (VWAP, moving average), and filtering by price. Results come from `raw/rust_workload_dynamic_array.csv` in this folder; plots are in `plots/`. The test uses a single language (Rust) to isolate layout and access-pattern effects.
 

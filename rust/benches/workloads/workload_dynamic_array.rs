@@ -6,6 +6,9 @@ use std::time::Instant;
 
 use polyglot_benchmarks::bench_util::{mean_std, memory_mb, NUM_RUNS, SCALES};
 
+// Benchmark: compare Vec, VecDeque, LinkedList, and columnar (SoA) on the same tick data
+// across four ops (sum, VWAP, moving average, filter) and memory at scales 1k–1M. Writes CSV to RESULTS_DIR.
+
 #[derive(Clone, Copy)]
 struct Tick {
     price: f64,
@@ -284,6 +287,22 @@ where
     black_box(filter_fn());
 }
 
+fn run_structure_ops<F1, F2, F3, F4>(
+    sum: F1,
+    vwap: F2,
+    ma: F3,
+    filter: F4,
+) -> (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>)
+where
+    F1: Fn() -> f64,
+    F2: Fn() -> f64,
+    F3: Fn() -> f64,
+    F4: Fn() -> (usize, f64),
+{
+    warm_up_four_ops(&sum, &vwap, &ma, &filter);
+    sample_four_ops(sum, vwap, ma, filter)
+}
+
 struct OpMetrics {
     sum_m: f64,
     sum_s: f64,
@@ -485,49 +504,25 @@ vec_memory_mb,vecdeque_memory_mb,linkedlist_memory_mb,columnar_memory_mb"
         let vecdeque: VecDeque<Tick> = data.iter().copied().collect();
         let linkedlist: LinkedList<Tick> = data.iter().copied().collect();
 
-        warm_up_four_ops(
+        let vec_samples = run_structure_ops(
             || vec_sum(&vec),
             || vec_vwap(&vec, w),
             || vec_ma(&vec, w),
             || vec_filter(&vec, threshold),
         );
-        let vec_samples = sample_four_ops(
-            || vec_sum(&vec),
-            || vec_vwap(&vec, w),
-            || vec_ma(&vec, w),
-            || vec_filter(&vec, threshold),
-        );
-        warm_up_four_ops(
+        let vd_samples = run_structure_ops(
             || vecdeque_sum(&vecdeque),
             || vecdeque_vwap(&vecdeque, w),
             || vecdeque_ma(&vecdeque, w),
             || vecdeque_filter(&vecdeque, threshold),
         );
-        let vd_samples = sample_four_ops(
-            || vecdeque_sum(&vecdeque),
-            || vecdeque_vwap(&vecdeque, w),
-            || vecdeque_ma(&vecdeque, w),
-            || vecdeque_filter(&vecdeque, threshold),
-        );
-        warm_up_four_ops(
+        let ll_samples = run_structure_ops(
             || linkedlist_sum(&linkedlist),
             || linkedlist_vwap(&linkedlist, w),
             || linkedlist_ma(&linkedlist, w),
             || linkedlist_filter(&linkedlist, threshold),
         );
-        let ll_samples = sample_four_ops(
-            || linkedlist_sum(&linkedlist),
-            || linkedlist_vwap(&linkedlist, w),
-            || linkedlist_ma(&linkedlist, w),
-            || linkedlist_filter(&linkedlist, threshold),
-        );
-        warm_up_four_ops(
-            || columnar_sum(&columns),
-            || columnar_vwap(&columns, w),
-            || columnar_ma(&columns, w),
-            || columnar_filter(&columns, threshold),
-        );
-        let col_samples = sample_four_ops(
+        let col_samples = run_structure_ops(
             || columnar_sum(&columns),
             || columnar_vwap(&columns, w),
             || columnar_ma(&columns, w),
