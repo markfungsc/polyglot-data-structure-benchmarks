@@ -22,11 +22,19 @@ WORKLOAD_CONFIGS = {
         "labels": {"hashmap": "HashMap", "btreemap": "BTreeMap", "vecmap": "VecMap"},
         "ops": ("update", "lookup", "scan", "range"),
     },
+    "heap": {
+        "structs": ("binary_heap", "b_tree_set", "sorted_vec", "vec"),
+        "labels": {"binary_heap": "BinaryHeap", "b_tree_set": "BTreeSet", "sorted_vec": "SortedVec", "vec": "Vec"},
+        "ops": ("push", "pop", "peek", "topk"),
+    },
 }
 
 
 def _detect_workload_config(fieldnames):
     """Return (structs, labels, ops) for this CSV based on column names."""
+    if "binary_heap_push_mean_ms" in fieldnames:
+        c = WORKLOAD_CONFIGS["heap"]
+        return c["structs"], c["labels"], c["ops"]
     if "hashmap_update_mean_ms" in fieldnames:
         c = WORKLOAD_CONFIGS["hashmap"]
         return c["structs"], c["labels"], c["ops"]

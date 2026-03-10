@@ -52,3 +52,8 @@ path = "benches/workloads/workload_dynamic_array.rs"
 name = "workload_hashmap"
 harness = false
 path = "benches/workloads/workload_hashmap.rs"
+
+[[bench]]
+name = "workload_heap"
+harness = false
+path = "benches/workloads/workload_heap.rs"
