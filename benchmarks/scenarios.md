@@ -37,21 +37,12 @@ Each scenario is implemented equivalently across Python, Java, C++, and Rust. Wh
 
 ---
 
-## Delete workload — *planned*
+## LRU Cache scenario (put/get, eviction) — *implemented* (LRU cache)
 
-Remove a large fraction of elements (e.g. half) in a defined pattern (front, back, random). Measures time and any reallocation cost.
-
-## Mixed read/write workload — *planned*
-
-Interleave inserts, lookups, and deletes in a controlled ratio. Measures sustained throughput and fairness across operations.
-
-## Concurrent producer-consumer — *planned*
-
-Multiple producer threads and consumer threads sharing a queue or similar structure. Measures throughput and correctness under contention.
-
-## High allocation churn test — *planned*
-
-Create and discard many short-lived structures or elements to stress allocator and GC. Measures time and peak memory.
+- **Scales:** N = 1k, 10k, 100k, 1M (one row per scale). Capacity is typically derived from N (e.g. N/10 or fixed ratio).
+- **Phases:** put_miss (insert new keys), put_hit (update existing), get_hit, get_miss, eviction (trigger evictions by inserting until capacity exceeded and evictions occur). Memory after build.
+- **Output:** `<lang>_lru_cache.csv` (e.g. `rust_lru_cache.csv`, `rust_native_lru_cache.csv` for the native `lru` crate). Columns include N, put_miss_mean_ms, put_hit_mean_ms, get_hit_mean_ms, get_miss_mean_ms, eviction_mean_ms, memory_mb.
+- **Findings:** [results/lru_cache/lru_cache_findings.md](../results/lru_cache/lru_cache_findings.md). Rust has two variants: custom (Rc/RefCell) and native `lru` crate.
 
 ---
 
@@ -62,3 +53,23 @@ For the hashmap benchmark only: use a fixed small capacity (e.g. 64 buckets) so 
 ## HashMap: load factor sensitivity — *implemented* (hashmap)
 
 For the hashmap benchmark only: fix N (e.g. 100_000) and vary initial capacity so that effective load factor is 0.25, 0.5, 0.75, 1.0. Output: `*_hashmap_loadfactor.csv`. Measures how performance changes with load factor.
+
+---
+
+## Delete workload — *partially implemented*
+
+- **Implemented:** Linked list has a **delete phase** (one delete of last element per run); see [Linked list scenario](#linked-list-scenario-insert--traverse--delete--implemented-linked-list) above.
+- **Planned:** A full delete workload (remove a large fraction of elements, e.g. half, in a defined pattern: front, back, random) across multiple structures is not yet implemented. Would measure time and reallocation cost.
+
+## Mixed read/write workload — *partially implemented*
+
+- **Implemented:** **Workload LRU** (Rust) includes mixed read/write: **balanced** (50% get / 50% put) and **mostly_get** (90% get / 10% put). See [workload_scenarios.md](workload_scenarios.md) and [results/workloads/lru/workload_lru_findings.md](../results/workloads/lru/workload_lru_findings.md).
+- **Planned:** A generic cross-language mixed read/write scenario (interleave inserts, lookups, deletes in a controlled ratio) for other structures (array, hashmap, heap) is not yet implemented.
+
+## Concurrent producer-consumer — *planned*
+
+Multiple producer threads and consumer threads sharing a queue or similar structure. Measures throughput and correctness under contention.
+
+## High allocation churn test — *planned*
+
+Create and discard many short-lived structures or elements to stress allocator and GC. Measures time and peak memory.
