@@ -27,11 +27,19 @@ WORKLOAD_CONFIGS = {
         "labels": {"binary_heap": "BinaryHeap", "b_tree_set": "BTreeSet", "sorted_vec": "SortedVec", "vec": "Vec"},
         "ops": ("push", "pop", "peek", "topk"),
     },
+    "lru": {
+        "structs": ("hashmap", "naive_lru", "lru", "linked"),
+        "labels": {"hashmap": "HashMap", "naive_lru": "NaiveLRU", "lru": "LruCache", "linked": "LinkedHashMap"},
+        "ops": ("put", "get", "mostly_get", "balanced"),
+    },
 }
 
 
 def _detect_workload_config(fieldnames):
     """Return (structs, labels, ops) for this CSV based on column names."""
+    if "lru_put_mean_ms" in fieldnames:
+        c = WORKLOAD_CONFIGS["lru"]
+        return c["structs"], c["labels"], c["ops"]
     if "binary_heap_push_mean_ms" in fieldnames:
         c = WORKLOAD_CONFIGS["heap"]
         return c["structs"], c["labels"], c["ops"]
@@ -50,6 +58,20 @@ def _default_raw_dir():
 def _default_plots_dir():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(script_dir, "..", "results", "workloads", "plots")
+
+
+def _group_rows_by(rows, key_col="scenario"):
+    """Group rows by key_col. Returns {key: [rows]}. If key_col not in rows, returns {'': rows}."""
+    if not rows or key_col not in rows[0]:
+        return {"": rows}
+    groups = {}
+    for r in rows:
+        k = r.get(key_col, "")
+        groups.setdefault(k, []).append(r)
+    # Sort each group by N for consistent x-axis order
+    for k in groups:
+        groups[k] = sorted(groups[k], key=lambda r: int(r.get("N", 0)))
+    return groups
 
 
 def load_workload_csv(path):
@@ -86,7 +108,7 @@ def plot_one_metric(rows, mean_cols, ylabel, title, out_path, log_y=True):
     print("Wrote", out_path)
 
 
-def plot_memory(rows, mem_cols, out_path):
+def plot_memory(rows, mem_cols, out_path, title=None):
     """Plot N vs memory (MB) for each structure (mem_cols: list of (struct_key, label); column is {struct_key}_memory_mb)."""
     import matplotlib.pyplot as plt
 
@@ -100,7 +122,7 @@ def plot_memory(rows, mem_cols, out_path):
         ax.semilogx(N, vals, "o-", label=label, markersize=6)
     ax.set_xlabel("N (number of elements)")
     ax.set_ylabel("Memory (MB)")
-    ax.set_title("Memory by structure (log N)")
+    ax.set_title(title if title is not None else "Memory by structure (log N)")
     ax.legend()
     ax.grid(True, which="both", alpha=0.3)
     fig.savefig(out_path, dpi=120, bbox_inches="tight")
@@ -151,27 +173,35 @@ def main():
 
         fieldnames = list(rows[0].keys())
         structs, struct_labels, ops = _detect_workload_config(fieldnames)
+        group_col = "scenario" if "scenario" in fieldnames else None
+        groups = _group_rows_by(rows, group_col) if group_col else {"": rows}
 
-        for op in ops:
-            # Columns are {struct}_{op}_mean_ms
-            required = [f"{s}_{op}_mean_ms" for s in structs]
-            if not any(c in fieldnames for c in required):
-                continue
-            cols_for_op = [(f"{s}_{op}_mean_ms", struct_labels[s]) for s in structs if f"{s}_{op}_mean_ms" in fieldnames]
-            if not cols_for_op:
-                continue
-            ylabel = f"{op.replace('_', ' ').title()} time (ms)"
-            title = f"Workload {op} (log scale)"
-            out_path = os.path.join(plots_dir, f"{prefix}_{op}_log.png")
-            plot_one_metric(rows, cols_for_op, ylabel, title, out_path, log_y=True)
+        for group_key, subset_rows in groups.items():
+            plot_prefix = f"{prefix}_{group_key}" if group_key else prefix
+            title_suffix = f" ({group_key}, log scale)" if group_key else " (log scale)"
+            memory_title_suffix = f" ({group_key}, log N)" if group_key else " (log N)"
 
-        # Memory: {struct}_memory_mb
-        mem_required = [f"{s}_memory_mb" for s in structs]
-        if any(c in fieldnames for c in mem_required):
-            mem_list = [(s, struct_labels[s]) for s in structs if f"{s}_memory_mb" in fieldnames]
-            if mem_list:
-                out_path = os.path.join(plots_dir, f"{prefix}_memory_log.png")
-                plot_memory(rows, mem_list, out_path)
+            for op in ops:
+                # Columns are {struct}_{op}_mean_ms
+                required = [f"{s}_{op}_mean_ms" for s in structs]
+                if not any(c in fieldnames for c in required):
+                    continue
+                cols_for_op = [(f"{s}_{op}_mean_ms", struct_labels[s]) for s in structs if f"{s}_{op}_mean_ms" in fieldnames]
+                if not cols_for_op:
+                    continue
+                ylabel = f"{op.replace('_', ' ').title()} time (ms)"
+                title = f"Workload {op}{title_suffix}"
+                out_path = os.path.join(plots_dir, f"{plot_prefix}_{op}_log.png")
+                plot_one_metric(subset_rows, cols_for_op, ylabel, title, out_path, log_y=True)
+
+            # Memory: {struct}_memory_mb
+            mem_required = [f"{s}_memory_mb" for s in structs]
+            if any(c in fieldnames for c in mem_required):
+                mem_list = [(s, struct_labels[s]) for s in structs if f"{s}_memory_mb" in fieldnames]
+                if mem_list:
+                    out_path = os.path.join(plots_dir, f"{plot_prefix}_memory_log.png")
+                    title = f"Memory by structure{memory_title_suffix}"
+                    plot_memory(subset_rows, mem_list, out_path, title=title)
 
     print("Plots saved to", plots_dir)
 

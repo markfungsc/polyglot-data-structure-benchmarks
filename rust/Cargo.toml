@@ -8,6 +8,7 @@ path = "src/lib.rs"
 
 [dependencies]
 ahash = "0.8"
+hashlink = "0.11.0"
 lru = "0.16.3"
 rustc-hash = "1"
 
@@ -57,3 +58,8 @@ path = "benches/workloads/workload_hashmap.rs"
 name = "workload_heap"
 harness = false
 path = "benches/workloads/workload_heap.rs"
+
+[[bench]]
+name = "workload_lru"
+harness = false
+path = "benches/workloads/workload_lru.rs"
