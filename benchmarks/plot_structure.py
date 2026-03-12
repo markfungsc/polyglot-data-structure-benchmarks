@@ -54,9 +54,23 @@ def load_structure_csv(path, structure):
             rows.append(row)
     return lang, rows
 
+
+def load_concurrency_csv(path):
+    """Load concurrency CSV (num_producers, num_consumers, elapsed_mean_ms, throughput_per_sec_mean, memory_mb)."""
+    basename = os.path.basename(path)
+    lang = basename.replace("_concurrency.csv", "") if basename.endswith("_concurrency.csv") else basename.replace(".csv", "")
+    rows = []
+    with open(path, newline="") as f:
+        r = csv.DictReader(f)
+        for row in r:
+            row["_lang"] = lang
+            row["_config"] = f"P{row['num_producers']} C{row['num_consumers']}"
+            rows.append(row)
+    return lang, rows
+
 def main():
     parser = argparse.ArgumentParser(description="Plot benchmark CSVs for a given structure (same schema as hashmap).")
-    parser.add_argument("--structure", required=True, help="Structure name (e.g. heap, dynamic_array, linked_list, lru_cache)")
+    parser.add_argument("--structure", required=True, help="Structure name (e.g. heap, dynamic_array, linked_list, lru_cache, concurrency)")
     parser.add_argument("--raw-dir", help="Directory containing *_<structure>.csv")
     parser.add_argument("--plots-dir", help="Directory to write PNGs")
     args = parser.parse_args()
@@ -78,13 +92,16 @@ def main():
 
     os.makedirs(plots_dir, exist_ok=True)
 
-    # Discover *_<structure>.csv
+    # Discover *_<structure>.csv (or *_concurrency.csv for structure "concurrency")
     main_data = {}
     for name in os.listdir(raw_dir):
         if name.endswith(suffix):
             path = os.path.join(raw_dir, name)
             if os.path.isfile(path):
-                lang, rows = load_structure_csv(path, structure)
+                if structure == "concurrency":
+                    lang, rows = load_concurrency_csv(path)
+                else:
+                    lang, rows = load_structure_csv(path, structure)
                 main_data[lang] = rows
 
     if not main_data:
@@ -94,8 +111,63 @@ def main():
     prefix = structure.replace("_", "-")
     title_prefix = structure.replace("_", " ").title()
 
-    if structure == "lru_cache":
-        # LRU cache: put_miss, put_hit, get_hit, get_miss, eviction + memory
+    if structure == "concurrency":
+        # Concurrency: x = config (P1 C1, P2 C2, ...), y = throughput / elapsed / memory
+        configs = [r["_config"] for r in next(iter(main_data.values()))]
+        x = list(range(len(configs)))
+
+        fig, ax = plt.subplots()
+        for lang, rows in main_data.items():
+            throughput = [float(r.get("throughput_per_sec_mean", 0) or 0) for r in rows]
+            ax.plot(x, throughput, "o-", label=lang_display(lang), markersize=6)
+        ax.set_xticks(x)
+        ax.set_xticklabels(configs, rotation=45, ha="right")
+        ax.set_xlabel("Producers, Consumers")
+        ax.set_ylabel("Throughput (items/s)")
+        ax.set_title("Concurrency: throughput by (P, C)")
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        fig.savefig(os.path.join(plots_dir, f"{prefix}_throughput.png"), dpi=120, bbox_inches="tight")
+        plt.close(fig)
+        print("Wrote", os.path.join(plots_dir, f"{prefix}_throughput.png"))
+
+        fig, ax = plt.subplots()
+        for lang, rows in main_data.items():
+            elapsed = [float(r.get("elapsed_mean_ms", 0) or 0) for r in rows]
+            ax.plot(x, elapsed, "o-", label=lang_display(lang), markersize=6)
+        ax.set_xticks(x)
+        ax.set_xticklabels(configs, rotation=45, ha="right")
+        ax.set_xlabel("Producers, Consumers")
+        ax.set_ylabel("Elapsed (ms)")
+        ax.set_title("Concurrency: elapsed time by (P, C)")
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        fig.savefig(os.path.join(plots_dir, f"{prefix}_elapsed.png"), dpi=120, bbox_inches="tight")
+        plt.close(fig)
+        print("Wrote", os.path.join(plots_dir, f"{prefix}_elapsed.png"))
+
+        has_memory = any(
+            float(r.get("memory_mb", 0) or 0) > 0
+            for rows in main_data.values()
+            for r in rows
+        )
+        if has_memory:
+            fig, ax = plt.subplots()
+            for lang, rows in main_data.items():
+                mem = [float(r.get("memory_mb", 0) or 0) for r in rows]
+                ax.plot(x, mem, "o-", label=lang_display(lang), markersize=6)
+            ax.set_xticks(x)
+            ax.set_xticklabels(configs, rotation=45, ha="right")
+            ax.set_xlabel("Producers, Consumers")
+            ax.set_ylabel("Memory (MB)")
+            ax.set_title("Concurrency: memory by (P, C)")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+            fig.savefig(os.path.join(plots_dir, f"{prefix}_memory.png"), dpi=120, bbox_inches="tight")
+            plt.close(fig)
+            print("Wrote", os.path.join(plots_dir, f"{prefix}_memory.png"))
+    elif structure == "lru_cache":
+        # LRU cache: put_miss, put_hit, get_hit, get_miss, eviction + memory (uses N)
         lru_metrics = [
             ("put_miss_mean_ms", "put_miss", "Put (miss) time (ms)"),
             ("put_hit_mean_ms", "put_hit", "Put (hit) time (ms)"),
@@ -117,8 +189,8 @@ def main():
             fig.savefig(os.path.join(plots_dir, f"{prefix}_{file_suffix}_log.png"), dpi=120, bbox_inches="tight")
             plt.close(fig)
             print("Wrote", os.path.join(plots_dir, f"{prefix}_{file_suffix}_log.png"))
-    else:
-        # Default: insert, get, delete (log-log)
+    elif structure != "concurrency":
+        # Default: insert, get, delete (log-log) — structures with N (heap, dynamic_array, linked_list)
         fig, ax = plt.subplots()
         for lang, rows in main_data.items():
             N = [int(r["N"]) for r in rows]
@@ -161,11 +233,14 @@ def main():
         plt.close(fig)
         print("Wrote", os.path.join(plots_dir, f"{prefix}_delete_log.png"))
 
-    # Plot: N vs memory if any language has memory_mb > 0
-    has_memory = any(
-        float(r.get("memory_mb", 0) or 0) > 0
-        for rows in main_data.values()
-        for r in rows
+    # Plot: N vs memory if any language has memory_mb > 0 (skip for concurrency; it has no N)
+    has_memory = (
+        structure != "concurrency"
+        and any(
+            float(r.get("memory_mb", 0) or 0) > 0
+            for rows in main_data.values()
+            for r in rows
+        )
     )
     if has_memory:
         fig, ax = plt.subplots()

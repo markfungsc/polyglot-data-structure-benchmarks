@@ -66,9 +66,12 @@ For the hashmap benchmark only: fix N (e.g. 100_000) and vary initial capacity s
 - **Implemented:** **Workload LRU** (Rust) includes mixed read/write: **balanced** (50% get / 50% put) and **mostly_get** (90% get / 10% put). See [workload_scenarios.md](workload_scenarios.md) and [results/workloads/lru/workload_lru_findings.md](../results/workloads/lru/workload_lru_findings.md).
 - **Planned:** A generic cross-language mixed read/write scenario (interleave inserts, lookups, deletes in a controlled ratio) for other structures (array, hashmap, heap) is not yet implemented.
 
-## Concurrent producer-consumer — *planned*
+## Concurrent producer-consumer — *implemented* (C++, Rust, Java; Python omitted)
 
-Multiple producer threads and consumer threads sharing a queue or similar structure. Measures throughput and correctness under contention.
+- **Setup:** Bounded blocking queue; P producer threads and C consumer threads; total N items produced and consumed. Implemented in C++, Rust, and Java only (Python omitted due to GIL).
+- **Parameters:** total_items = 100,000, capacity = 4096; configs (P,C) = (1,1), (2,2), (4,4), (8, 8), (4, 1), (1, 4). Each config is run 5 times (mean ± std).
+- **Output:** `cpp_concurrency.csv`, `rust_concurrency.csv`, `java_concurrency.csv` under `results/raw/`. Columns: num_producers, num_consumers, capacity, total_items, elapsed_mean_ms, elapsed_std_ms, throughput_per_sec_mean, memory_mb.
+- **Findings:** [results/concurrency/concurrency_findings.md](../results/concurrency/concurrency_findings.md) — C++/Rust custom mutex+condvar vs Java ArrayBlockingQueue; throughput and scaling by (P,C); asymmetric configs and possible explanations.
 
 ## High allocation churn test — *planned*
 
