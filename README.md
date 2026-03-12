@@ -44,7 +44,9 @@ Implemented benchmarks (dynamic array, linked list, heap, hashmap) use:
 - **Heap:** Insert, get (pop min N times); Python uses `heapq`; see [scenarios.md](benchmarks/scenarios.md).
 - **HashMap only:** Main scenario above; plus low-entropy (same N scales, fixed small capacity) and load-factor sensitivity (e.g. N=100k, load factors 0.25–1.0).
 
-Planned or optional (see [scenarios.md](benchmarks/scenarios.md)): mixed read/write, concurrent producer-consumer, high allocation churn.
+**Concurrency (producer–consumer):** Bounded blocking queue, P producers and C consumers, 100k items; C++, Java, Rust only (Python omitted due to GIL). See [scenarios.md](benchmarks/scenarios.md) and [results/concurrency/concurrency_findings.md](results/concurrency/concurrency_findings.md).
+
+Planned or optional (see [scenarios.md](benchmarks/scenarios.md)): mixed read/write, high allocation churn.
 
 ## Results summaries (readable overviews)
 
@@ -61,6 +63,7 @@ This project implements the same data structures and benchmarks in Python, Java,
 - **Linked list** — Insert, get (traverse), delete and memory at 1k–1M elements. C++ and Rust fastest; Java shows non-linear scaling and high variance. Results and findings: [results/linked_list/](results/linked_list/) ([linked_list_findings.md](results/linked_list/linked_list_findings.md)).
 - **Heap** — Insert and get (pop min N times) at 1k–1M elements. C++ and Rust fastest; Rust lowest memory; Python uses `heapq`. Results and findings: [results/heap/](results/heap/) ([heap_findings.md](results/heap/heap_findings.md)).
 - **HashMap** — Main scenario (scaled N) plus low-entropy and load-factor scenarios. C++ fastest insert; Rust fastest get and lowest memory. Results and plots: [results/hashmap/](results/hashmap/).
+- **Concurrency** — Bounded queue producer–consumer at (P,C) configs (1,1) through (8,8) and asymmetric (4,1), (1,4). Java (ArrayBlockingQueue) fastest; C++ and Rust use custom mutex+condvar. Results and findings: [results/concurrency/](results/concurrency/) ([concurrency_findings.md](results/concurrency/concurrency_findings.md)).
 
 **Workload benchmarks (Rust)** — multi-op or key-space scenarios, one language to isolate structure choice: [workload_scenarios.md](benchmarks/workload_scenarios.md). Summaries: [results/WORKLOAD_SUMMARY.md](results/WORKLOAD_SUMMARY.md). Implemented: workload_dynamic_array, workload_hashmap, workload_heap, workload_lru (see `./benchmarks/run_all.sh rust workload_<name>`).
 
@@ -73,7 +76,7 @@ This project implements the same data structures and benchmarks in Python, Java,
 | HashMap        | ✓      | ✓    | ✓   | ✓    |
 | Heap           | ✓      | ✓    | ✓   | ✓    |
 | LRU Cache      | ✓      | ✓    | ✓   | ✓    |
-| Concurrency    | —      | —    | —   | —    |
+| Concurrency    | —      | ✓    | ✓   | ✓    |
 
 ## Methodology
 
@@ -85,7 +88,7 @@ Results include runtime overhead differences (JIT warmup, interpreter overhead, 
 ### Test and benchmark results
 
 - **Benchmark results:** `make bench` writes CSV files to [results/raw/](results/raw/). Each run can overwrite; use `make save-hashmap-study` or `make save-structure-study STRUCTURE=...` to copy into preserved study folders.
-- **Preserved study results:** [results/hashmap/](results/hashmap/) (HashMap), [results/dynamic_array/](results/dynamic_array/) (dynamic array), [results/linked_list/](results/linked_list/) (linked list), [results/heap/](results/heap/) (heap). Each has `raw/` (CSVs) and `plots/` (PNGs); findings in `*_findings.md`.
+- **Preserved study results:** [results/hashmap/](results/hashmap/) (HashMap), [results/dynamic_array/](results/dynamic_array/) (dynamic array), [results/linked_list/](results/linked_list/) (linked list), [results/heap/](results/heap/) (heap), [results/lru_cache/](results/lru_cache/) (LRU cache), [results/concurrency/](results/concurrency/) (concurrency). Each has `raw/` (CSVs) and `plots/` (PNGs); findings in `*_findings.md`.
 - **Unit tests:** Run with `make test`; no results files are committed (pytest/mvn/cargo output to console).
 
 ## Limitations and Experimental Considerations
@@ -101,7 +104,7 @@ Results include runtime overhead differences (JIT warmup, interpreter overhead, 
 
 - **benchmarks/** — [scenarios.md](benchmarks/scenarios.md) (structure scenario definitions), [workload_scenarios.md](benchmarks/workload_scenarios.md) (workload test definitions), [run_all.sh](benchmarks/run_all.sh) (orchestration)
 - **docs/** — [design.md](docs/design.md), [methodology.md](docs/methodology.md)
-- **results/** — CSV output in [results/raw/](results/raw/README.md). **Summaries:** [DATA_STRUCTURES_SUMMARY.md](results/DATA_STRUCTURES_SUMMARY.md) (structure benchmarks), [WORKLOAD_SUMMARY.md](results/WORKLOAD_SUMMARY.md) (workload benchmarks). Preserved studies: [results/hashmap/](results/hashmap/), [results/dynamic_array/](results/dynamic_array/), [results/linked_list/](results/linked_list/), [results/heap/](results/heap/), [results/lru_cache/](results/lru_cache/), each with `raw/`, `plots/`, `*_findings.md`; workload results under [results/workloads/](results/workloads/) (e.g. `workloads/lru/`). Use `make save-hashmap-study`, `make save-structure-study STRUCTURE=...`, or `make plot-structure-study STRUCTURE=...` for structure studies.
+- **results/** — CSV output in [results/raw/](results/raw/README.md). **Summaries:** [DATA_STRUCTURES_SUMMARY.md](results/DATA_STRUCTURES_SUMMARY.md) (structure benchmarks), [WORKLOAD_SUMMARY.md](results/WORKLOAD_SUMMARY.md) (workload benchmarks). Preserved studies: [results/hashmap/](results/hashmap/), [results/dynamic_array/](results/dynamic_array/), [results/linked_list/](results/linked_list/), [results/heap/](results/heap/), [results/lru_cache/](results/lru_cache/), [results/concurrency/](results/concurrency/), each with `raw/`, `plots/`, `*_findings.md`; workload results under [results/workloads/](results/workloads/) (e.g. `workloads/lru/`). Use `make save-hashmap-study`, `make save-structure-study STRUCTURE=...`, `make save-concurrency-study`, or `make plot-structure-study STRUCTURE=...` / `make plot-concurrency-study` for structure studies.
 - **python/**, **java/**, **cpp/**, **rust/** — per-language sources, benchmarks, and tests
 
 ## Quick start
@@ -122,6 +125,8 @@ make save-structure-study STRUCTURE=lru_cache       # copy + plot LRU cache (inc
 make plot-structure-study STRUCTURE=<name>         # regenerate plots only (no copy)
 make save-hashmap-study   # hashmap: copy results/raw/*_hashmap*.csv to results/hashmap/raw/ and plot
 make plot-hashmap-study   # hashmap: regenerate plots from results/hashmap/raw/
+make save-concurrency-study   # concurrency: copy results/raw/*_concurrency.csv to results/concurrency/raw/ and plot
+make plot-concurrency-study   # concurrency: regenerate plots from results/concurrency/raw/
 ```
 
 **Workload studies** (Rust workload benchmarks): `TEST` = `dynamic_array` | `hashmap` | `heap` | `lru`

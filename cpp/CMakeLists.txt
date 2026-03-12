@@ -26,6 +26,7 @@ target_include_directories(bench_lru_cache PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/s
 target_link_libraries(bench_lru_cache ds)
 
 add_executable(bench_concurrency benchmarks/bench_concurrency.cpp)
+target_include_directories(bench_concurrency PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/benchmarks)
 target_link_libraries(bench_concurrency ds)
 
 add_executable(test_ds tests/test_all.cpp)

@@ -167,9 +167,37 @@ C++ lowest (among real implementations) → Rust (native) moderate → Rust (cus
 
 ---
 
+## Concurrency (bounded producer–consumer queue)
+
+**Full findings:** [concurrency/concurrency_findings.md](concurrency/concurrency_findings.md)
+
+*Not a data structure per se; benchmark compares bounded blocking-queue throughput across C++, Java, and Rust (Python omitted — GIL).*
+
+### What is measured
+
+- **Setup:** One bounded queue (capacity 4096), P producer threads and C consumer threads; 100k items total. Configs: (1,1), (2,2), (4,4), (8,8), (4,1), (1,4).
+- **Implementations:** C++ and Rust use **custom** mutex + two condition variables (not_full, not_empty). Java uses **`ArrayBlockingQueue`** (optimized standard library).
+
+### Benchmark results (throughput by config)
+
+- **Java** — **highest throughput** in almost every config; **scales with threads** (e.g. (2,2) and (4,4) faster than (1,1)). Asymmetric (4,1) and (1,4) stay near (1,1).
+- **C++** — strong at (1,1) and (4,4); (2,2) and (8,8) show variance. Asymmetric configs much slower (~1 M/s) due to many block/wake cycles.
+- **Rust** — best at (1,1); **throughput falls as P and C increase** (single mutex contention). Asymmetric (4,1)/(1,4) **very slow** (~0.2 M/s); fair, non-spinning mutex under heavy blocking.
+
+### Why?
+
+- **Java:** ArrayBlockingQueue is a tuned, lock-optimized structure; JIT and library design give best throughput and scaling in this benchmark.
+- **C++ / Rust:** Hand-rolled mutex+condvar is correct but a single lock; more threads → more contention. Rust’s `std::sync::Mutex` does not spin and is fair → larger drop with many threads and in asymmetric configs.
+
+### Memory
+
+Rust ~1.2–1.6 MB (process); C++ ~2–8 MB; Java ~99–295 MB (JVM heap, not directly comparable).
+
+---
+
 # Language features and patterns (cross-structure)
 
-These patterns recur across the five data structures and explain why the same language often lands in a similar place (e.g. C++/Rust fast, Java mid with high memory, Python slowest).
+These patterns recur across the five data structures and the concurrency benchmark and explain why the same language often lands in a similar place (e.g. C++/Rust fast, Java mid with high memory, Python slowest; concurrency is an exception where Java leads).
 
 ## C++
 
@@ -211,5 +239,6 @@ These patterns recur across the five data structures and explain why the same la
 | Linked List    | [linked_list/linked_list_findings.md](linked_list/linked_list_findings.md) |
 | HashMap        | [hashmap/hashmap_tests_findings.md](hashmap/hashmap_tests_findings.md) |
 | LRU Cache      | [lru_cache/lru_cache_findings.md](lru_cache/lru_cache_findings.md) |
+| Concurrency    | [concurrency/concurrency_findings.md](concurrency/concurrency_findings.md) |
 
 Each findings file contains: methodology, Big O, numbers at a glance, interpretation by language, pitfalls, and takeaways. Benchmark CSVs live in `raw/` under each structure folder (or in [results/raw/](raw/) for the default run); plots in `plots/` under each structure folder.
